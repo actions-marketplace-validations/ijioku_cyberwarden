@@ -1,12 +1,12 @@
 import { describe, it, expect } from "vitest"; // Import Vitest testing utilities.
-import { defenseInDepthRules } from "../../src/rules/defense-in-depth.js"; // Import our 7 new Defense-in-Depth rules.
+import { defenseInDepthRules } from "../../src/rules/defense-in-depth.js"; // Import all 13 CipherWarden Defense-in-Depth rules.
 import type { ConfigFile } from "../../src/types.js"; // Import the ConfigFile type used by rules.
 
-function runAllDefenseRules(file: ConfigFile) { // Helper function to run all 7 new rules on one test file.
-  return defenseInDepthRules.flatMap((rule) => rule.check(file)); // Collect every finding returned across all 7 rules.
+function runAllDefenseRules(file: ConfigFile) { // Helper function to run all 13 rules on one test file.
+  return defenseInDepthRules.flatMap((rule) => rule.check(file)); // Collect every finding returned across all 13 rules.
 } // End runAllDefenseRules helper.
 
-describe("defenseInDepthRules", () => { // Group all unit tests for our 7 new security rules.
+describe("CipherWarden defenseInDepthRules (13 rules)", () => { // Group all unit tests for our 13 security rules.
   it("flags disabled database Row-Level Security (RLS)", () => { // Test Rule 1: Database RLS protection.
     const findings = runAllDefenseRules({ // Run rules on a sample file disabling RLS.
       path: "hooks/migrate.sql", // Sample file path.
@@ -70,6 +70,60 @@ describe("defenseInDepthRules", () => { // Group all unit tests for our 7 new se
     expect(findings.some((f) => f.id === "defense-sensitive-audit-logging")).toBe(true); // Verify Rule 7 fires.
   }); // End Rule 7 test.
 
+  it("flags weak CSP allowing 'unsafe-inline' scripts", () => { // Test Rule 8: CSP unsafe-inline check.
+    const findings = runAllDefenseRules({ // Run rules on a sample security header.
+      path: "hooks/headers.js", // Sample file path.
+      type: "hook-code", // Sample file type.
+      content: "res.setHeader('Content-Security-Policy', \"script-src 'self' 'unsafe-inline'\");", // Risky CSP header.
+    }); // End rule run.
+    expect(findings.some((f) => f.id === "defense-csp-unsafe-inline")).toBe(true); // Verify Rule 8 fires.
+  }); // End Rule 8 test.
+
+  it("flags unverified Paystack/Flutterwave/Meta webhooks", () => { // Test Rule 9: Regional webhook verification.
+    const findings = runAllDefenseRules({ // Run rules on a sample Paystack webhook.
+      path: "hooks/paystack-webhook.js", // Sample file path.
+      type: "hook-code", // Sample file type.
+      content: "const paystackConfig = { verifySignature: false };", // Risky skipped signature check.
+    }); // End rule run.
+    expect(findings.some((f) => f.id === "defense-regional-webhook-unverified")).toBe(true); // Verify Rule 9 fires.
+  }); // End Rule 9 test.
+
+  it("flags AI chatbot trusting client-sent chat history", () => { // Test Rule 10: Client-controlled AI chat history.
+    const findings = runAllDefenseRules({ // Run rules on a sample chatbot route.
+      path: "hooks/chat.js", // Sample file path.
+      type: "hook-code", // Sample file type.
+      content: "const reply = await llm.chat({ messages: req.body.messages });", // Risky client-sent history.
+    }); // End rule run.
+    expect(findings.some((f) => f.id === "defense-ai-chat-history-client-trust")).toBe(true); // Verify Rule 10 fires.
+  }); // End Rule 10 test.
+
+  it("flags insecure session cookies with httpOnly: false", () => { // Test Rule 11: Session cookie flags.
+    const findings = runAllDefenseRules({ // Run rules on a sample cookie setup.
+      path: "hooks/session.js", // Sample file path.
+      type: "hook-code", // Sample file type.
+      content: "res.cookie('sid', token, { httpOnly: false, secure: false });", // Risky cookie options.
+    }); // End rule run.
+    expect(findings.some((f) => f.id === "defense-insecure-session-cookie")).toBe(true); // Verify Rule 11 fires.
+  }); // End Rule 11 test.
+
+  it("flags weak MD5/SHA1/SHA256 password hashing", () => { // Test Rule 12: Weak password hashing.
+    const findings = runAllDefenseRules({ // Run rules on a sample login file.
+      path: "hooks/login.js", // Sample file path.
+      type: "hook-code", // Sample file type.
+      content: "const hashed = crypto.createHash('md5').update(password).digest('hex');", // Risky MD5 password hash.
+    }); // End rule run.
+    expect(findings.some((f) => f.id === "defense-weak-password-hash")).toBe(true); // Verify Rule 12 fires.
+  }); // End Rule 12 test.
+
+  it("flags unmasked BVN/NIN personal data logging (NDPA 2023)", () => { // Test Rule 13: NDPA 2023 PII logging.
+    const findings = runAllDefenseRules({ // Run rules on a sample KYC script.
+      path: "hooks/kyc.js", // Sample file path.
+      type: "hook-code", // Sample file type.
+      content: "console.log('Verified user BVN:', user.bvn);", // Risky unmasked BVN log.
+    }); // End rule run.
+    expect(findings.some((f) => f.id === "defense-ndpa-pii-exposure")).toBe(true); // Verify Rule 13 fires.
+  }); // End Rule 13 test.
+
   it("produces zero findings on clean, secure code", () => { // Verify clean code has zero false positives.
     const findings = runAllDefenseRules({ // Run rules on a safe example.
       path: "hooks/safe.js", // Safe file path.
@@ -78,4 +132,4 @@ describe("defenseInDepthRules", () => { // Group all unit tests for our 7 new se
     }); // End rule run.
     expect(findings).toHaveLength(0); // Confirm zero false positives.
   }); // End clean code test.
-}); // End defenseInDepthRules test suite.
+}); // End CipherWarden defenseInDepthRules test suite.

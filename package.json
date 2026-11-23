@@ -1,9 +1,10 @@
 {
-  "name": "ecc-agentshield",
-  "version": "1.6.0",
-  "description": "Security auditor for AI agent configurations. Scans Claude Code setups for vulnerabilities, misconfigs, and injection risks.",
+  "name": "cipherwarden",
+  "version": "1.7.0",
+  "description": "CipherWarden — AI & Production Security Auditor (MIT-licensed fork of affaan-m/agentshield with 13 extended Defense-in-Depth rules).",
   "type": "module",
   "bin": {
+    "cipherwarden": "./dist/index.js",
     "agentshield": "./dist/index.js"
   },
   "exports": {

@@ -1,11 +1,11 @@
-import type { ConfigFile, Finding, Rule, Severity } from "../types.js"; // Import core AgentShield types for rules and findings.
+import type { ConfigFile, Finding, Rule, Severity } from "../types.js"; // Import core scanner types for rules and findings.
 
-interface DefensePatternRule { // Define a reusable blueprint for each defense-in-depth check.
+interface DefensePatternRule { // Define a reusable blueprint for each CipherWarden defense-in-depth rule.
   readonly id: string; // Store the unique rule identifier.
   readonly name: string; // Store the human-readable rule name.
   readonly description: string; // Store a plain-English summary of what the rule catches.
   readonly severity: Severity; // Store how urgent the security issue is.
-  readonly category: Finding["category"]; // Store which AgentShield security category this belongs to.
+  readonly category: Finding["category"]; // Store which security category this belongs to.
   readonly pattern: RegExp; // Store the regular expression that detects the risky pattern.
   readonly fixDescription: string; // Store a clear instruction on how to fix the issue.
   readonly fixAfter: string; // Store a safe replacement example for the report.
@@ -19,7 +19,7 @@ function findLineNumber(content: string, matchIndex: number): number { // Define
   return content.slice(0, matchIndex).split("\n").length; // Count newline breaks before the match to get the 1-based line number.
 } // End of findLineNumber helper.
 
-const DEFENSE_IN_DEPTH_SPECS: ReadonlyArray<DefensePatternRule> = [ // List all 7 extended Defense-in-Depth security checks.
+const DEFENSE_IN_DEPTH_SPECS: ReadonlyArray<DefensePatternRule> = [ // List all 13 CipherWarden Defense-in-Depth security checks.
   { // Start Rule 1: Database Row-Level Security (RLS) & least-privilege check.
     id: "defense-db-rls-disabled", // Unique ID for the database RLS rule.
     name: "Database Row-Level Security Disabled or Overly Permissive", // Display title for the RLS rule.
@@ -111,13 +111,90 @@ const DEFENSE_IN_DEPTH_SPECS: ReadonlyArray<DefensePatternRule> = [ // List all 
       "Redact passwords, tokens, and secrets before logging, and keep TLS certificate verification enabled in all environments.", // Actionable fix guidance.
     fixAfter: "logger.info({ event: 'user_login', userId }); // Never log raw passwords or tokens", // Safe replacement snippet.
   }, // End Rule 7.
+  { // Start Rule 8: CSP unsafe-inline / unsafe-eval protection.
+    id: "defense-csp-unsafe-inline", // Unique ID for the weak Content-Security-Policy rule.
+    name: "Weak Content-Security-Policy Allowing 'unsafe-inline' or 'unsafe-eval'", // Display title for the CSP rule.
+    description: // Explain why 'unsafe-inline' or 'unsafe-eval' weakens XSS protection.
+      "Allowing 'unsafe-inline' or 'unsafe-eval' in Content-Security-Policy lets attackers execute injected scripts directly inside HTML pages.", // Plain-English risk description.
+    severity: "high", // Mark as high severity because it weakens XSS defense.
+    category: "misconfiguration", // Group under misconfiguration.
+    pattern: /Content-Security-Policy[^\n]*(?:'unsafe-inline'|'unsafe-eval')/i, // Match CSP headers containing unsafe-inline or unsafe-eval.
+    fixDescription: // Explain how to tighten CSP.
+      "Move inline scripts into external .js files and remove 'unsafe-inline' and 'unsafe-eval' from your Content-Security-Policy header (or use per-request nonces).", // Actionable fix guidance.
+    fixAfter: "Content-Security-Policy: default-src 'self'; script-src 'self'", // Safe replacement snippet.
+  }, // End Rule 8.
+  { // Start Rule 9: Paystack, Flutterwave & Meta/WhatsApp webhook signature verification.
+    id: "defense-regional-webhook-unverified", // Unique ID for Paystack/Flutterwave/Meta webhook checks.
+    name: "Unverified Paystack, Flutterwave, or WhatsApp/Meta Webhook Handler", // Display title for the regional webhook rule.
+    description: // Explain why skipping webhook signature checks on Paystack/Flutterwave/Meta is dangerous.
+      "Accepting Paystack, Flutterwave, or Meta/WhatsApp webhooks without verifying x-paystack-signature, verif-hash, or x-hub-signature-256 lets attackers forge fake payments or messages.", // Plain-English risk description.
+    severity: "critical", // Mark as critical because forged webhooks unlock unpaid orders or spoof messages.
+    category: "misconfiguration", // Group under misconfiguration.
+    pattern: // Match Paystack/Flutterwave/WhatsApp webhook routes that explicitly skip signature verification.
+      /(?:(?:paystack|flutterwave|whatsapp).*skip(?:Verify|Signature)|verifySignature\s*[:=]\s*false|x-paystack-signature\s*===\s*undefined)/i, // Case-insensitive regex for skipped regional webhook verification.
+    fixDescription: // Explain how to verify regional payment and messaging webhooks.
+      "Always verify HMAC signatures using timingSafeEqual (x-paystack-signature for Paystack, verif-hash for Flutterwave, x-hub-signature-256 for Meta/WhatsApp).", // Actionable fix guidance.
+    fixAfter: "if (!verifyHmacTimingSafe(rawBody, req.headers['x-paystack-signature'], process.env.PAYSTACK_SECRET)) return res.status(401).end();", // Safe replacement snippet.
+  }, // End Rule 9.
+  { // Start Rule 10: Client-controlled AI chat history spoofing.
+    id: "defense-ai-chat-history-client-trust", // Unique ID for client-trusted AI chat history rule.
+    name: "AI Chatbot Trusting Client-Sent Chat History or System Messages", // Display title for the AI chat history rule.
+    description: // Explain why trusting chat history from req.body lets visitors hijack the AI.
+      "Passing req.body.messages or req.body.chatHistory straight to an LLM lets visitors fake previous assistant replies or inject fake system prompts.", // Plain-English risk description.
+    severity: "high", // Mark as high severity because it enables prompt spoofing and fake leads.
+    category: "injection", // Group under injection.
+    pattern: // Match passing req.body.messages or req.body.chatHistory directly into an AI model call.
+      /(?:messages\s*:\s*req\.body\.(?:messages|chatHistory|history)|chatHistory\s*=\s*req\.body\.(?:messages|chatHistory))/i, // Case-insensitive regex for client-controlled LLM history.
+    fixDescription: // Explain how to store AI chat history safely.
+      "Store conversation history on the server tied to the user's session ID and only accept the latest plain user message text from the client.", // Actionable fix guidance.
+    fixAfter: "const history = await getServerChatHistory(sessionId); history.push({ role: 'user', content: cleanInput });", // Safe replacement snippet.
+  }, // End Rule 10.
+  { // Start Rule 11: Weak or insecure session cookie flags.
+    id: "defense-insecure-session-cookie", // Unique ID for insecure session cookies.
+    name: "Insecure Session Cookie Missing HttpOnly, Secure, or Strict SameSite", // Display title for the cookie rule.
+    description: // Explain why disabling HttpOnly/Secure/SameSite exposes sessions to theft.
+      "Setting httpOnly: false, secure: false, or sameSite: 'none' on session cookies lets XSS scripts steal login tokens or enables CSRF attacks.", // Plain-English risk description.
+    severity: "high", // Mark as high severity because stolen session cookies hijack accounts.
+    category: "misconfiguration", // Group under misconfiguration.
+    pattern: // Match cookie options that explicitly disable httpOnly or secure flags.
+      /(?:cookie|session)[\s\S]{0,80}(?:httpOnly\s*:\s*false|secure\s*:\s*false)/i, // Case-insensitive regex for insecure cookie config.
+    fixDescription: // Explain how to harden session cookies.
+      "Always set { httpOnly: true, secure: true, sameSite: 'strict' } on authentication and session cookies.", // Actionable fix guidance.
+    fixAfter: "res.cookie('sid', token, { httpOnly: true, secure: true, sameSite: 'strict' });", // Safe replacement snippet.
+  }, // End Rule 11.
+  { // Start Rule 12: Weak password hashing algorithms (MD5 / SHA1 / plain SHA256).
+    id: "defense-weak-password-hash", // Unique ID for weak password hashing.
+    name: "Weak Fast Hash (MD5/SHA1/SHA256) Used for Passwords", // Display title for the weak password hash rule.
+    description: // Explain why MD5/SHA1/SHA256 are unsafe for storing passwords.
+      "Hashing passwords with fast algorithms like MD5, SHA1, or plain SHA256 lets attackers crack leaked password databases in seconds with GPUs.", // Plain-English risk description.
+    severity: "critical", // Mark as critical because weak password hashes ruin credential safety.
+    category: "secrets", // Group under secrets.
+    pattern: // Match crypto.createHash('md5'|'sha1'|'sha256') used alongside password variables.
+      /createHash\s*\(\s*["'](?:md5|sha1|sha256)["']\s*\)[^\n;]*password/i, // Case-insensitive regex for weak password hashing.
+    fixDescription: // Explain how to hash passwords securely.
+      "Use a slow, memory-hard password hashing algorithm like scrypt, Argon2id, or bcrypt with a unique random salt per user.", // Actionable fix guidance.
+    fixAfter: "const hash = crypto.scryptSync(password, salt, 64).toString('hex');", // Safe replacement snippet.
+  }, // End Rule 12.
+  { // Start Rule 13: NDPA 2023 / PII exposure in logs or unmasked dumps.
+    id: "defense-ndpa-pii-exposure", // Unique ID for NDPA 2023 / personal data privacy checks.
+    name: "Unmasked Personal Data (PII / BVN / NIN) Logged or Exposed (NDPA 2023)", // Display title for the PII/NDPA rule.
+    description: // Explain why exposing raw PII violates NDPA 2023 and user privacy.
+      "Logging or exposing sensitive personal identifiers (BVN, NIN, SSN, raw phone/email dumps) violates Nigeria's Data Protection Act (NDPA 2023) and global privacy standards.", // Plain-English risk description.
+    severity: "high", // Mark as high severity for regulatory and privacy risk.
+    category: "exposure", // Group under exposure.
+    pattern: // Match logging raw BVN, NIN, SSN, or full user PII objects.
+      /(?:console\.log|logger\.(?:info|debug|warn))\s*\([^)]*(?:\bbvn\b|\bnin\b|\bssn\b|nationalId|passportNumber)/i, // Case-insensitive regex for unmasked PII logging.
+    fixDescription: // Explain how to stay NDPA 2023 compliant.
+      "Mask or redact personal identifiers (BVN, NIN, SSN) before logging, collect only necessary fields, and encrypt stored PII at rest.", // Actionable fix guidance.
+    fixAfter: "logger.info({ event: 'kyc_checked', userId }); // Redact BVN/NIN per NDPA 2023", // Safe replacement snippet.
+  }, // End Rule 13.
 ]; // End of DEFENSE_IN_DEPTH_SPECS array.
 
 /**
- * Convert each DefensePatternRule blueprint into a full AgentShield Rule object.
+ * Convert each DefensePatternRule blueprint into a full CipherWarden Rule object.
  */
-function buildRule(spec: DefensePatternRule): Rule { // Define factory function to create an AgentShield Rule.
-  return { // Return a standard AgentShield Rule object.
+function buildRule(spec: DefensePatternRule): Rule { // Define factory function to create a scanner Rule.
+  return { // Return a standard Rule object.
     id: spec.id, // Copy the unique rule ID.
     name: spec.name, // Copy the rule display name.
     description: spec.description, // Copy the rule description.
@@ -158,4 +235,4 @@ function buildRule(spec: DefensePatternRule): Rule { // Define factory function 
   }; // End returned Rule object.
 } // End buildRule factory.
 
-export const defenseInDepthRules: ReadonlyArray<Rule> = DEFENSE_IN_DEPTH_SPECS.map(buildRule); // Export all 7 new Defense-in-Depth rules for registration in src/rules/index.ts.
+export const defenseInDepthRules: ReadonlyArray<Rule> = DEFENSE_IN_DEPTH_SPECS.map(buildRule); // Export all 13 CipherWarden Defense-in-Depth rules.
