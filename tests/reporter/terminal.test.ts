@@ -58,7 +58,7 @@ function makeReport(overrides: Partial<SecurityReport> = {}): SecurityReport {
 describe("renderTerminalReport", () => {
   it("returns a string with report header", () => {
     const output = renderTerminalReport(makeReport());
-    expect(output).toContain("AgentShield Security Report");
+    expect(output).toContain("CyberWarden Security Report");
   });
 
   it("includes the target path", () => {

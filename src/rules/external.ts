@@ -33,6 +33,8 @@ const CategorySchema = z.enum([
   "exposure",
   "exfiltration",
   "misconfiguration",
+  // Lets external rule packs report web-app findings too
+  "webapp",
 ]);
 
 const RulePackEntrySchema = z.object({

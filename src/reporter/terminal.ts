@@ -21,7 +21,7 @@ export function renderTerminalReport(report: SecurityReport): string {
 
   // Header
   lines.push("");
-  lines.push(chalk.bold.cyan("  AgentShield Security Report"));
+  lines.push(chalk.bold.cyan("  CyberWarden Security Report"));
   lines.push(chalk.dim(`  ${report.timestamp}`));
   lines.push(chalk.dim(`  Target: ${report.targetPath}`));
   lines.push("");
@@ -37,6 +37,11 @@ export function renderTerminalReport(report: SecurityReport): string {
   lines.push(renderBar("Hooks", report.score.breakdown.hooks));
   lines.push(renderBar("MCP Servers", report.score.breakdown.mcp));
   lines.push(renderBar("Agents", report.score.breakdown.agents));
+  // Show the web-app bar only when the scan ran with --web
+  if (report.score.breakdown.webapp !== undefined) {
+    // Draw the web-app score bar under the others
+    lines.push(renderBar("Web App", report.score.breakdown.webapp));
+  }
   lines.push("");
 
   lines.push(...renderDefenses(report.defenses));
@@ -128,7 +133,7 @@ export function renderTerminalReport(report: SecurityReport): string {
 
   // Footer
   lines.push(chalk.dim("  ─────────────────────────────────────────"));
-  lines.push(chalk.dim("  AgentShield — Security auditor for AI agent configs"));
+  lines.push(chalk.dim("  CyberWarden — security auditor for AI agents and web apps (built on AgentShield, MIT)"));
   for (const cta of proCtaPlainLines()) {
     lines.push(chalk.dim(`  ${cta}`));
   }
@@ -535,7 +540,7 @@ export function renderDeepScanSummary(result: DeepScanResult): string {
 
   lines.push("");
   lines.push(chalk.dim("  ─────────────────────────────────────────"));
-  lines.push(chalk.bold.cyan("  AgentShield Deep Scan Complete"));
+  lines.push(chalk.bold.cyan("  CyberWarden Deep Scan Complete"));
   lines.push("");
 
   return lines.join("\n");

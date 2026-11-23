@@ -1,4 +1,4 @@
-// CipherWarden live demo fixture intentionally containing 12 unsafe code patterns (+ 1 in package.json = all 13 new rules!).
+// CyberWarden live demo fixture intentionally containing 12 unsafe code patterns (+ 1 in package.json = all 13 new rules!).
 const dbMigration = "ALTER TABLE billing DISABLE ROW LEVEL SECURITY;"; // Triggers Rule 1: disabled database RLS.
 const meta = await fetch("http://169.254.169.254/latest/meta-data/"); // Triggers Rule 2: SSRF targeting cloud metadata.
 fs.writeFileSync("/uploads/" + file.originalname, buffer); // Triggers Rule 3: unsafe file upload with raw filename.
@@ -12,6 +12,7 @@ res.cookie("sid", token, { httpOnly: false, secure: false }); // Triggers Rule 1
 const badHash = crypto.createHash("md5").update(password).digest("hex"); // Triggers Rule 12: weak MD5 password hashing.
 console.log("Customer KYC BVN:", user.bvn); // Triggers Rule 13: unmasked BVN/NIN logging (NDPA 2023).
 await User.update(req.body); // Triggers Rule 14: mass assignment allowing hidden role: 'admin'.
-const otp = Math.random().toString().slice(2, 8); // Triggers Rule 15: predictable Math.random() OTP.
-const adminPass = process.env.ADMIN_PASS || "changeme"; // Triggers Rule 16: default fallback admin password.
+const otp = Math.random().toString().slice(2, 8); // Predictable Math.random() OTP (caught by webapp-weak-random-token when scanning app code with --web).
+const adminPass = process.env.ADMIN_PASS || "changeme"; // Hardcoded fallback password (caught by webapp-secret-env-fallback with --web).
+app.use(express.static(".", { dotfiles: "allow" })); // Triggers Rule 16: static server exposes .env / .git dotfiles.
 const otpConfig = { otpMaxAttempts: Infinity }; // Triggers Rule 17: unlimited OTP retries.

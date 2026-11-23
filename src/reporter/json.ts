@@ -40,7 +40,7 @@ export function renderMarkdownReport(report: SecurityReport): string {
   const lines: string[] = [];
   const s = report.summary;
 
-  lines.push("# AgentShield Security Report");
+  lines.push("# CyberWarden Security Report");
   lines.push("");
   lines.push(`**Date:** ${report.timestamp}`);
   lines.push(`**Target:** ${report.targetPath}`);

@@ -1,6 +1,6 @@
 import type { ConfigFile, Finding, Rule, Severity } from "../types.js"; // Import core scanner types for rules and findings.
 
-interface DefensePatternRule { // Define a reusable blueprint for each CipherWarden defense-in-depth rule.
+interface DefensePatternRule { // Define a reusable blueprint for each CyberWarden defense-in-depth rule.
   readonly id: string; // Store the unique rule identifier.
   readonly name: string; // Store the human-readable rule name.
   readonly description: string; // Store a plain-English summary of what the rule catches.
@@ -19,7 +19,7 @@ function findLineNumber(content: string, matchIndex: number): number { // Define
   return content.slice(0, matchIndex).split("\n").length; // Count newline breaks before the match to get the 1-based line number.
 } // End of findLineNumber helper.
 
-const DEFENSE_IN_DEPTH_SPECS: ReadonlyArray<DefensePatternRule> = [ // List all 13 CipherWarden Defense-in-Depth security checks.
+const DEFENSE_IN_DEPTH_SPECS: ReadonlyArray<DefensePatternRule> = [ // List all 12 CyberWarden Defense-in-Depth security checks.
   { // Start Rule 1: Database Row-Level Security (RLS) & least-privilege check.
     id: "defense-db-rls-disabled", // Unique ID for the database RLS rule.
     name: "Database Row-Level Security Disabled or Overly Permissive", // Display title for the RLS rule.
@@ -59,19 +59,6 @@ const DEFENSE_IN_DEPTH_SPECS: ReadonlyArray<DefensePatternRule> = [ // List all 
       "Validate MIME type and max file size server-side, generate a random UUID filename, and store uploads in isolated object storage (S3/R2/Storage bucket).", // Actionable fix guidance.
     fixAfter: "const safeName = `${crypto.randomUUID()}.webp`; await uploadToBucket(safeName, buffer);", // Safe replacement snippet.
   }, // End Rule 3.
-  { // Start Rule 4: Unverified payment webhooks or client-trusted pricing.
-    id: "defense-payment-webhook-unverified", // Unique ID for the payment/webhook rule.
-    name: "Client-Trusted Price or Unverified Payment Webhook", // Display title for the payment rule.
-    description: // Explain why trusting browser prices or unverified webhooks loses revenue.
-      "Trusting prices or paid flags from req.body or parsing payment webhooks without cryptographic signature verification lets attackers unlock paid features for free.", // Plain-English risk description.
-    severity: "critical", // Mark as critical because it directly compromises billing.
-    category: "misconfiguration", // Group under misconfiguration.
-    pattern: // Match client-supplied price/isPaid fields or webhook handlers skipping signature verification.
-      /(?:req\.body\.(?:price|amount|isPaid|subscriptionTier)|stripe\.webhooks\.constructEvent\s*=\s*false|webhook.*JSON\.parse\s*\(\s*req\.body)/i, // Case-insensitive regex for billing tampering.
-    fixDescription: // Explain how to secure pricing and payment webhooks.
-      "Calculate all prices on the server from your database/Stripe catalog and verify every webhook using stripe.webhooks.constructEvent() with your webhook secret.", // Actionable fix guidance.
-    fixAfter: "const event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);", // Safe replacement snippet.
-  }, // End Rule 4.
   { // Start Rule 5: Billing / credit race conditions (double-spend).
     id: "defense-race-condition-billing", // Unique ID for the race-condition rule.
     name: "Potential Double-Spend Race Condition in Credit or Balance Update", // Display title for the race-condition rule.
@@ -111,18 +98,6 @@ const DEFENSE_IN_DEPTH_SPECS: ReadonlyArray<DefensePatternRule> = [ // List all 
       "Redact passwords, tokens, and secrets before logging, and keep TLS certificate verification enabled in all environments.", // Actionable fix guidance.
     fixAfter: "logger.info({ event: 'user_login', userId }); // Never log raw passwords or tokens", // Safe replacement snippet.
   }, // End Rule 7.
-  { // Start Rule 8: CSP unsafe-inline / unsafe-eval protection.
-    id: "defense-csp-unsafe-inline", // Unique ID for the weak Content-Security-Policy rule.
-    name: "Weak Content-Security-Policy Allowing 'unsafe-inline' or 'unsafe-eval'", // Display title for the CSP rule.
-    description: // Explain why 'unsafe-inline' or 'unsafe-eval' weakens XSS protection.
-      "Allowing 'unsafe-inline' or 'unsafe-eval' in Content-Security-Policy lets attackers execute injected scripts directly inside HTML pages.", // Plain-English risk description.
-    severity: "high", // Mark as high severity because it weakens XSS defense.
-    category: "misconfiguration", // Group under misconfiguration.
-    pattern: /Content-Security-Policy[^\n]*(?:'unsafe-inline'|'unsafe-eval')/i, // Match CSP headers containing unsafe-inline or unsafe-eval.
-    fixDescription: // Explain how to tighten CSP.
-      "Move inline scripts into external .js files and remove 'unsafe-inline' and 'unsafe-eval' from your Content-Security-Policy header (or use per-request nonces).", // Actionable fix guidance.
-    fixAfter: "Content-Security-Policy: default-src 'self'; script-src 'self'", // Safe replacement snippet.
-  }, // End Rule 8.
   { // Start Rule 9: Paystack, Flutterwave & Meta/WhatsApp webhook signature verification.
     id: "defense-regional-webhook-unverified", // Unique ID for Paystack/Flutterwave/Meta webhook checks.
     name: "Unverified Paystack, Flutterwave, or WhatsApp/Meta Webhook Handler", // Display title for the regional webhook rule.
@@ -149,32 +124,6 @@ const DEFENSE_IN_DEPTH_SPECS: ReadonlyArray<DefensePatternRule> = [ // List all 
       "Store conversation history on the server tied to the user's session ID and only accept the latest plain user message text from the client.", // Actionable fix guidance.
     fixAfter: "const history = await getServerChatHistory(sessionId); history.push({ role: 'user', content: cleanInput });", // Safe replacement snippet.
   }, // End Rule 10.
-  { // Start Rule 11: Weak or insecure session cookie flags.
-    id: "defense-insecure-session-cookie", // Unique ID for insecure session cookies.
-    name: "Insecure Session Cookie Missing HttpOnly, Secure, or Strict SameSite", // Display title for the cookie rule.
-    description: // Explain why disabling HttpOnly/Secure/SameSite exposes sessions to theft.
-      "Setting httpOnly: false, secure: false, or sameSite: 'none' on session cookies lets XSS scripts steal login tokens or enables CSRF attacks.", // Plain-English risk description.
-    severity: "high", // Mark as high severity because stolen session cookies hijack accounts.
-    category: "misconfiguration", // Group under misconfiguration.
-    pattern: // Match cookie options that explicitly disable httpOnly or secure flags.
-      /(?:cookie|session)[\s\S]{0,80}(?:httpOnly\s*:\s*false|secure\s*:\s*false)/i, // Case-insensitive regex for insecure cookie config.
-    fixDescription: // Explain how to harden session cookies.
-      "Always set { httpOnly: true, secure: true, sameSite: 'strict' } on authentication and session cookies.", // Actionable fix guidance.
-    fixAfter: "res.cookie('sid', token, { httpOnly: true, secure: true, sameSite: 'strict' });", // Safe replacement snippet.
-  }, // End Rule 11.
-  { // Start Rule 12: Weak password hashing algorithms (MD5 / SHA1 / plain SHA256).
-    id: "defense-weak-password-hash", // Unique ID for weak password hashing.
-    name: "Weak Fast Hash (MD5/SHA1/SHA256) Used for Passwords", // Display title for the weak password hash rule.
-    description: // Explain why MD5/SHA1/SHA256 are unsafe for storing passwords.
-      "Hashing passwords with fast algorithms like MD5, SHA1, or plain SHA256 lets attackers crack leaked password databases in seconds with GPUs.", // Plain-English risk description.
-    severity: "critical", // Mark as critical because weak password hashes ruin credential safety.
-    category: "secrets", // Group under secrets.
-    pattern: // Match crypto.createHash('md5'|'sha1'|'sha256') used alongside password variables.
-      /createHash\s*\(\s*["'](?:md5|sha1|sha256)["']\s*\)[^\n;]*password/i, // Case-insensitive regex for weak password hashing.
-    fixDescription: // Explain how to hash passwords securely.
-      "Use a slow, memory-hard password hashing algorithm like scrypt, Argon2id, or bcrypt with a unique random salt per user.", // Actionable fix guidance.
-    fixAfter: "const hash = crypto.scryptSync(password, salt, 64).toString('hex');", // Safe replacement snippet.
-  }, // End Rule 12.
   { // Start Rule 13: NDPA 2023 / PII exposure in logs or unmasked dumps.
     id: "defense-ndpa-pii-exposure", // Unique ID for NDPA 2023 / personal data privacy checks.
     name: "Unmasked Personal Data (PII / BVN / NIN) Logged or Exposed (NDPA 2023)", // Display title for the PII/NDPA rule.
@@ -201,28 +150,15 @@ const DEFENSE_IN_DEPTH_SPECS: ReadonlyArray<DefensePatternRule> = [ // List all 
       "Explicitly allowlist only the fields users are allowed to edit (e.g., const { name, bio } = schema.parse(req.body)) before saving to the database.", // Actionable fix guidance.
     fixAfter: "const { name, bio } = profileSchema.parse(req.body); await User.update({ name, bio });", // Safe replacement snippet.
   }, // End Rule 14.
-  { // Start Rule 15: Predictable Math.random() used for tokens/OTPs.
-    id: "defense-math-random-token", // Unique ID for the predictable randomness rule.
-    name: "Predictable Math.random() Used for Security Token, Session, or OTP", // Display title for the Math.random rule.
-    description: // Explain why Math.random() is unsafe for security tokens or OTPs.
-      "Math.random() is not cryptographically secure—attackers can predict tokens, reset links, or OTP codes generated with it.", // Plain-English risk description.
-    severity: "high", // Mark as high severity because predictable tokens break auth.
-    category: "secrets", // Group under secrets.
-    pattern: // Match token/otp/secret/session/code assignments using Math.random().
-      /(?:token|otp|secret|sessionId|resetCode|apiKey)\s*=\s*[^\n;]*Math\.random\s*\(\s*\)/i, // Case-insensitive regex for Math.random() tokens.
-    fixDescription: // Explain how to generate cryptographically secure tokens.
-      "Use Node's crypto.randomBytes(), crypto.randomInt(), or crypto.randomUUID() for all tokens, sessions, and OTP codes.", // Actionable fix guidance.
-    fixAfter: "const token = crypto.randomBytes(32).toString('hex'); // Cryptographically secure", // Safe replacement snippet.
-  }, // End Rule 15.
   { // Start Rule 16: Default/fallback admin passwords or exposed dotfiles.
     id: "defense-default-admin-or-dotfiles", // Unique ID for default passwords & exposed dotfiles.
-    name: "Default Fallback Admin Password or Exposed Dotfiles (.env / .git)", // Display title for default credentials/dotfiles rule.
+    name: "Static File Server Exposes Dotfiles (.env / .git)", // Display title for default credentials/dotfiles rule.
     description: // Explain why fallback passwords like 'changeme' or serving dotfiles is dangerous.
-      "Leaving fallback passwords ('changeme', 'admin123') in code or serving dotfiles (.env, .git) lets automated scanners take over your live server.", // Plain-English risk description.
+      "Serving dotfiles (.env, .git) from a static file server lets automated scanners download your secrets and source code. (Hardcoded fallback passwords are caught by the webapp-secret-env-fallback rule.)", // Plain-English risk description.
     severity: "critical", // Mark as critical because default creds and exposed .env give instant full access.
     category: "exposure", // Group under exposure.
     pattern: // Match fallback 'changeme'/'admin123' passwords or Express static dotfiles: 'allow'.
-      /(?:(?:\|\||\?\?)\s*["'](?:changeme|admin123|password123|default123)["']|dotfiles\s*:\s*["']allow["'])/i, // Case-insensitive regex for default passwords or dotfile exposure.
+      /dotfiles\s*:\s*["']allow["']/i, // Case-insensitive regex for default passwords or dotfile exposure.
     fixDescription: // Explain how to eliminate fallback passwords and block dotfiles.
       "Fail startup if required admin secrets are missing from environment variables, and set dotfiles: 'deny' on static file servers.", // Actionable fix guidance.
     fixAfter: "const adminPass = process.env.ADMIN_PASSWORD; if (!adminPass) throw new Error('ADMIN_PASSWORD required');", // Safe replacement snippet.
@@ -243,7 +179,7 @@ const DEFENSE_IN_DEPTH_SPECS: ReadonlyArray<DefensePatternRule> = [ // List all 
 ]; // End of DEFENSE_IN_DEPTH_SPECS array.
 
 /**
- * Convert each DefensePatternRule blueprint into a full CipherWarden Rule object.
+ * Convert each DefensePatternRule blueprint into a full CyberWarden Rule object.
  */
 function buildRule(spec: DefensePatternRule): Rule { // Define factory function to create a scanner Rule.
   return { // Return a standard Rule object.
@@ -287,4 +223,4 @@ function buildRule(spec: DefensePatternRule): Rule { // Define factory function 
   }; // End returned Rule object.
 } // End buildRule factory.
 
-export const defenseInDepthRules: ReadonlyArray<Rule> = DEFENSE_IN_DEPTH_SPECS.map(buildRule); // Export all 13 CipherWarden Defense-in-Depth rules.
+export const defenseInDepthRules: ReadonlyArray<Rule> = DEFENSE_IN_DEPTH_SPECS.map(buildRule); // Export all 12 CyberWarden Defense-in-Depth rules.

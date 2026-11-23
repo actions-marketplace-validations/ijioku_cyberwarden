@@ -38,12 +38,12 @@ describe("renderHtmlReport", () => {
 
   it("includes the report title", () => {
     const html = renderHtmlReport(makeReport());
-    expect(html).toContain("AgentShield Security Report");
+    expect(html).toContain("CyberWarden Security Report");
   });
 
   it("includes the grade in the title tag", () => {
     const html = renderHtmlReport(makeReport());
-    expect(html).toContain("<title>AgentShield Security Report — Grade A</title>");
+    expect(html).toContain("<title>CyberWarden Security Report — Grade A</title>");
   });
 
   it("includes inline styles", () => {
@@ -261,6 +261,6 @@ describe("renderHtmlReport", () => {
 
   it("includes footer", () => {
     const html = renderHtmlReport(makeReport());
-    expect(html).toContain("Security auditor for AI agent configurations");
+    expect(html).toContain("security auditor for AI agents and web apps");
   });
 });

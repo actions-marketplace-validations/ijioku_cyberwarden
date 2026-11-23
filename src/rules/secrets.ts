@@ -269,6 +269,18 @@ function isExplicitBearerTokenPlaceholder(rawValue: string): boolean {
   return /^YOUR_[A-Z0-9]+(?:_[A-Z0-9]+)*_HERE$/.test(match[1]);
 }
 
+/**
+ * CyberWarden: true when the match at `matchIndex` is part of a
+ * Subresource Integrity / npm lockfile checksum such as
+ * "integrity": "sha512-AbC...==". These are public hashes of package files.
+ */
+export function isPackageIntegrityHash(content: string, matchIndex: number): boolean {
+  // Look at the 80 characters just before the match
+  const before = content.substring(Math.max(0, matchIndex - 80), matchIndex);
+  // The checksum always starts with "sha256-", "sha384-" or "sha512-" (the base64 part follows straight after)
+  return /sha(?:1|256|384|512)-[A-Za-z0-9+/]*$/.test(before);
+}
+
 export const secretRules: ReadonlyArray<Rule> = [
   {
     id: "secrets-hardcoded",
@@ -294,6 +306,12 @@ export const secretRules: ReadonlyArray<Rule> = [
           }
 
           if (isLikelyMarkdownExamplePassword(file, secretPattern.name, idx)) {
+            continue;
+          }
+
+          // CyberWarden fix: npm "integrity" checksums (sha512-...==) look like
+          // Azure keys but are public file fingerprints, not secrets, so skip them
+          if (secretPattern.name === "azure-key" && isPackageIntegrityHash(file.content, idx)) {
             continue;
           }
 

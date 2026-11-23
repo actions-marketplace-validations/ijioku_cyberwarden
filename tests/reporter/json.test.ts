@@ -158,7 +158,7 @@ describe("renderJsonReport", () => {
 describe("renderMarkdownReport", () => {
   it("starts with markdown heading", () => {
     const output = renderMarkdownReport(makeReport());
-    expect(output).toContain("# AgentShield Security Report");
+    expect(output).toContain("# CyberWarden Security Report");
   });
 
   describe("Pro CTA footer", () => {

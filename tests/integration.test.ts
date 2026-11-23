@@ -242,7 +242,7 @@ describe("integration", () => {
       const report = calculateScore(result);
       const output = renderTerminalReport(report);
 
-      expect(output).toContain("AgentShield Security Report");
+      expect(output).toContain("CyberWarden Security Report");
       expect(output).toContain("Grade");
       expect(output).toContain("Score Breakdown");
       expect(output).toContain("Findings");

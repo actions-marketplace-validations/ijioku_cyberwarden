@@ -224,9 +224,9 @@ const program = new Command();
 const SEVERITY_ORDER = ["critical", "high", "medium", "low", "info"] as const;
 
 program
-  .name("agentshield")
+  .name("cyberwarden")
   .description("Security auditor for AI agent configurations")
-  .version("1.6.0");
+  .version("1.7.0");
 
 function emitReportOutput(output: string, outputPath: string | undefined): void {
   if (!outputPath) {
@@ -282,6 +282,8 @@ program
   .command("scan")
   .description("Scan a Claude Code configuration directory for security issues")
   .option("-p, --path <path>", "Path to scan (default: ~/.claude or current dir)")
+  // CyberWarden: opt-in web-app checks (SQL injection, XSS, CORS, cookies, webhooks, AI chat and more)
+  .option("--web", "Also scan web-app code for common security bugs (CyberWarden)", false)
   .option("-f, --format <format>", "Output format: terminal, json, markdown, html, sarif", "terminal")
   .option("-o, --output <path>", "Write the primary report output to a file")
   .option("--fix", "Auto-apply safe fixes", false)
@@ -361,7 +363,8 @@ program
 
     // ── Phase 1: Static rule-based scan ──────────────────────
     logger.log({ level: "info", phase: "static", message: "Running static analysis" });
-    const result = scan(targetPath, { extraRules });
+    // Run the scan, adding the web-app checks when --web was given
+    const result = scan(targetPath, { extraRules, web: options.web === true });
 
     // Filter by severity
     const filteredResult = {
@@ -587,7 +590,8 @@ program
       const scoreBefore = calculateScore(result).score.numericScore;
       const fixVerification = applyFixesVerified(result, {
         scoreBefore,
-        rescan: () => scan(targetPath),
+        // Re-scan the same way as the first scan (keeping --web if it was used)
+        rescan: () => scan(targetPath, { extraRules, web: options.web === true }),
         score: (rescanned) => calculateScore(rescanned).score.numericScore,
         version: program.version() ?? "unknown",
       });
@@ -759,7 +763,7 @@ program
 
 const evidencePack = program
   .command("evidence-pack")
-  .description("Inspect and verify AgentShield evidence-pack bundles");
+  .description("Inspect and verify CyberWarden evidence-pack bundles");
 
 evidencePack
   .command("inspect")
@@ -772,7 +776,7 @@ evidencePack
       writeStdout(JSON.stringify(result, null, 2));
     } else {
       writeStdout();
-      writeStdout("AgentShield Evidence Pack Inspection");
+      writeStdout("CyberWarden Evidence Pack Inspection");
       writeStdout(`Directory:   ${result.outputDir}`);
       writeStdout(`Status:      ${result.ok ? "passed" : "failed"}`);
       writeStdout(`Digest:      ${result.bundleDigest ?? "not available"}`);
@@ -830,7 +834,7 @@ evidencePack
       writeStdout(JSON.stringify(result, null, 2));
     } else {
       writeStdout();
-      writeStdout("AgentShield Evidence Pack Fleet");
+      writeStdout("CyberWarden Evidence Pack Fleet");
       writeStdout(
         `Packs:       ${result.summary.totalPacks} total, ${result.summary.verifiedPacks} verified, ${result.summary.invalidPacks} invalid`
       );
@@ -895,7 +899,7 @@ evidencePack
       console.log(JSON.stringify(result, null, 2));
     } else {
       console.log("");
-      console.log("AgentShield Evidence Pack Verification");
+      console.log("CyberWarden Evidence Pack Verification");
       console.log(`Directory: ${result.outputDir}`);
       console.log(`Status:    ${result.ok ? "passed" : "failed"}`);
       console.log(`Digest:    ${result.bundleDigest ?? "not available"}`);
@@ -922,7 +926,7 @@ evidencePack
 
 const baseline = program
   .command("baseline")
-  .description("Create and inspect AgentShield drift baselines");
+  .description("Create and inspect CyberWarden drift baselines");
 
 baseline
   .command("write")
@@ -1018,7 +1022,7 @@ program
       process.exit(1);
     }
 
-    console.log(`\n  AgentShield Watch Mode\n`);
+    console.log(`\n  CyberWarden Watch Mode\n`);
     console.log(`  Watching:       ${targetPath}`);
     console.log(`  Debounce:       ${debounceMs}ms`);
     console.log(`  Alert mode:     ${alertMode}`);
@@ -1086,12 +1090,12 @@ const runtime = program
 
 runtime
   .command("install")
-  .description("Install the AgentShield PreToolUse hook into settings.json")
+  .description("Install the CyberWarden PreToolUse hook into settings.json")
   .option("-p, --path <path>", "Target directory (default: current directory)", ".")
   .action((options) => {
     const result = installRuntime(resolve(options.path));
 
-    console.log(`\n  AgentShield Runtime Monitor\n`);
+    console.log(`\n  CyberWarden Runtime Monitor\n`);
     console.log(`  ${result.message}`);
     if (result.hookInstalled) {
       console.log(`  Settings: ${result.settingsPath}`);
@@ -1105,12 +1109,12 @@ runtime
 
 runtime
   .command("uninstall")
-  .description("Remove the AgentShield PreToolUse hook from settings.json")
+  .description("Remove the CyberWarden PreToolUse hook from settings.json")
   .option("-p, --path <path>", "Target directory (default: current directory)", ".")
   .action((options) => {
     const result = uninstallRuntime(resolve(options.path));
 
-    console.log(`\n  AgentShield Runtime Monitor\n`);
+    console.log(`\n  CyberWarden Runtime Monitor\n`);
     console.log(`  ${result.message}\n`);
   });
 
@@ -1126,7 +1130,7 @@ runtime
     if (options.json) {
       console.log(JSON.stringify(result, null, 2));
     } else {
-      console.log(`\n  AgentShield Runtime Monitor\n`);
+      console.log(`\n  CyberWarden Runtime Monitor\n`);
       console.log(`  Health:         ${result.health}`);
       console.log(`  Settings:       ${result.settingsPath}`);
       console.log(`  Settings file:  ${result.settingsExists ? "present" : "missing"}`);
@@ -1153,7 +1157,7 @@ runtime
     const result = repairRuntime(resolve(options.path));
     const status = getRuntimeStatus(resolve(options.path));
 
-    console.log(`\n  AgentShield Runtime Monitor\n`);
+    console.log(`\n  CyberWarden Runtime Monitor\n`);
     console.log(`  ${result.message}`);
     if (result.settingsBackupPath) {
       console.log(`  Settings backup: ${result.settingsBackupPath}`);

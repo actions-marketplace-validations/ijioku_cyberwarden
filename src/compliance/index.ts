@@ -40,6 +40,8 @@ const CONTROL_MAP: Readonly<
     exposure: [{ id: "CC6.1", title: "Logical access security" }],
     exfiltration: [{ id: "CC6.7", title: "Restricted data transmission" }],
     misconfiguration: [{ id: "CC7.1", title: "Detection of security events" }],
+    // Web-app code flaws map to secure system development and logical access controls
+    webapp: [{ id: "CC8.1", title: "Change management" }, { id: "CC6.1", title: "Logical access security" }],
   },
   pci: {
     secrets: [{ id: "Req 3", title: "Protect stored account data" }, { id: "Req 8", title: "Identify and authenticate access" }],
@@ -52,6 +54,8 @@ const CONTROL_MAP: Readonly<
     exposure: [{ id: "Req 3", title: "Protect stored account data" }],
     exfiltration: [{ id: "Req 4", title: "Protect data in transmission" }, { id: "Req 1", title: "Network security controls" }],
     misconfiguration: [{ id: "Req 2", title: "Secure configurations" }],
+    // Web-app code flaws map to PCI's secure software development requirements
+    webapp: [{ id: "Req 6.2", title: "Secure software development" }, { id: "Req 6.4", title: "Public-facing web apps protected" }],
   },
   iso: {
     secrets: [{ id: "A.5.17", title: "Authentication information" }, { id: "A.8.24", title: "Use of cryptography" }],
@@ -64,6 +68,8 @@ const CONTROL_MAP: Readonly<
     exposure: [{ id: "A.8.12", title: "Data leakage prevention" }],
     exfiltration: [{ id: "A.8.12", title: "Data leakage prevention" }],
     misconfiguration: [{ id: "A.8.9", title: "Configuration management" }],
+    // Web-app code flaws map to ISO's secure coding control
+    webapp: [{ id: "A.8.28", title: "Secure coding" }, { id: "A.8.26", title: "Application security requirements" }],
   },
 };
 

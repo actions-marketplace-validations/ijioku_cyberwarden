@@ -10,6 +10,8 @@ import type {
   Severity,
 } from "../types.js";
 import { discoverConfigFiles } from "./discovery.js";
+// Finds web-app files for the --web scan
+import { discoverWebAppFiles } from "./web-discovery.js";
 import { getBuiltinRules } from "../rules/index.js";
 import { isExampleLikePath, isPluginCachePath } from "../source-context.js";
 import { analyzeSkillHealth } from "../skills/health.js";
@@ -20,19 +22,31 @@ export interface ScanResult {
   readonly findings: ReadonlyArray<Finding>;
   readonly skillHealth?: SkillHealthSummary;
   readonly harnessAdapters?: HarnessAdapterSummary;
+  // True when the scan also checked web-app code (the --web flag)
+  readonly webScan?: boolean;
 }
 
 export interface ScanOptions {
   /** Extra rules loaded from external rule packs (`--rule-pack`). */
   readonly extraRules?: ReadonlyArray<Rule>;
+  // When true, also scan the project's web-app code with the webapp rules (--web)
+  readonly web?: boolean;
 }
+
+// File types that only the --web scan produces
+const WEB_FILE_TYPES = new Set(["web-code", "web-html", "web-env", "web-gitignore", "web-git-tracked"]);
+
+// The one original rule that is also useful on web code: hardcoded API keys and passwords
+const WEB_SHARED_RULE_IDS = new Set(["secrets-hardcoded"]);
 
 /**
  * Main scanner: discovers config files and runs all rules against them.
  * External rule packs (if any) run alongside the built-in rules.
  */
 export function scan(targetPath: string, options: ScanOptions = {}): ScanResult {
-  const target = discoverConfigFiles(targetPath);
+  const configTarget = discoverConfigFiles(targetPath);
+  // With --web, add the project's web-app files (skipping any path already found as AI config)
+  const target = options.web ? withWebFiles(configTarget) : configTarget;
   const rules = [...getBuiltinRules(), ...(options.extraRules ?? [])];
   const findings = sortBySeverity([
     ...runRules(target.files, rules, target.path),
@@ -41,7 +55,33 @@ export function scan(targetPath: string, options: ScanOptions = {}): ScanResult 
   const skillHealth = analyzeSkillHealth(target.files);
   const harnessAdapters = detectHarnessAdapters(targetPath);
 
-  return { target, findings, skillHealth, harnessAdapters };
+  // Pass webScan along so the score shows a "Web App" bar
+  return { target, findings, skillHealth, harnessAdapters, ...(options.web ? { webScan: true } : {}) };
+}
+
+// Add the web-app files to the list of files to scan, without duplicates
+function withWebFiles(target: ScanTarget): ScanTarget {
+  // Paths already discovered as AI agent config
+  const seen = new Set(target.files.map((file) => file.path));
+  // Web files whose path hasn't been seen yet
+  const webFiles = discoverWebAppFiles(target.path).filter((file) => !seen.has(file.path));
+  // Return a new target with both lists combined
+  return { ...target, files: [...target.files, ...webFiles] };
+}
+
+// Decide whether a rule should run on a file. Web files only get the webapp
+// rules plus the hardcoded-secret rule; the AI-config rules would just add noise there.
+function ruleAppliesToFile(rule: Rule, file: ConfigFile): boolean {
+  // Is this one of the files only the --web scan finds?
+  const isWebFile = WEB_FILE_TYPES.has(file.type);
+  // Is this one of the new webapp rules?
+  const isWebRule = rule.category === "webapp";
+  // Webapp rules only ever look at web files
+  if (isWebRule) return isWebFile;
+  // AI-config rules keep running on AI-config files exactly as before
+  if (!isWebFile) return true;
+  // On web code and HTML, also run the hardcoded-secret rule (never on .env, whose job is to hold secrets)
+  return WEB_SHARED_RULE_IDS.has(rule.id) && (file.type === "web-code" || file.type === "web-html");
 }
 
 /**
@@ -56,6 +96,8 @@ function runRules(
 
   for (const file of files) {
     for (const rule of rules) {
+      // Skip rule/file pairs that don't belong together (see ruleAppliesToFile)
+      if (!ruleAppliesToFile(rule, file)) continue;
       const ruleFindings = rule.check(file, files);
       findings.push(...ruleFindings);
     }

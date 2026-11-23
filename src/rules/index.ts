@@ -14,7 +14,10 @@ import { codexRules } from "./codex.js";
 import { hermesRules } from "./hermes.js";
 import { claudeCodeRules } from "./claude-code.js";
 import { harnessRules } from "./harnesses.js";
-import { defenseInDepthRules } from "./defense-in-depth.js"; // Import our 7 extended Defense-in-Depth security rules.
+// CyberWarden: Defense-in-Depth rules (database, uploads, payments, privacy and more).
+import { defenseInDepthRules } from "./defense-in-depth.js";
+// CyberWarden: web-app rules (only run on web files found by `scan --web`).
+import { webAppRules } from "./webapp.js";
 
 /**
  * Returns all built-in security rules.
@@ -39,6 +42,10 @@ export function getBuiltinRules(): ReadonlyArray<Rule> {
     ...hermesRules,
     ...claudeCodeRules,
     ...harnessRules,
-    ...defenseInDepthRules, // Register our 7 new Defense-in-Depth rules alongside built-in AgentShield rules.
+    // CyberWarden rules are added last so the original rule order (and existing reports) stay the same.
+    // Defense-in-Depth rules.
+    ...defenseInDepthRules,
+    // Web-app rules.
+    ...webAppRules,
   ];
 }

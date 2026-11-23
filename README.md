@@ -28,6 +28,31 @@ Available as CLI, GitHub Action, and [GitHub App](https://github.com/apps/ecc-to
 
 ---
 
+> ## CyberWarden: web-app checks (`--web`)
+>
+> This copy adds **23 web-app security rules** on top of the original AI-config rules, plus a fix
+> so npm `integrity` checksums in `package-lock.json` are no longer reported as "Azure storage keys".
+>
+> ```bash
+> npm run build
+> node dist/index.js scan --path ./my-app --web
+> ```
+>
+> `--web` scans your JavaScript/TypeScript, HTML, `.env` file names (never their contents), `.gitignore`
+> and git's list of tracked files for: SQL injection, XSS, `eval`/shell injection, secrets with hardcoded
+> fallbacks, secrets in browser code, `.env` not ignored or already committed, `Math.random()` tokens,
+> MD5/SHA or plain-text passwords, insecure cookies, open CORS, weak CSP, missing security headers,
+> huge body limits, missing rate limits, unsigned webhooks (Paystack, Flutterwave, Stripe, Meta),
+> open redirects, path traversal, leaked error details, payments trusted from the browser, and AI
+> features that mix visitor text into the system prompt or give the model risky tools without approval.
+> A "Web App" score is added and counts for half of the overall grade. Without `--web`, scans behave
+> exactly like the original tool. Rules live in `src/rules/webapp.ts`; see `DEMO-EXPLAINER.md`.
+>
+> These are pattern checks on code text. They catch common, clear-cut mistakes but cannot prove an app
+> is secure. Pair them with `npm audit`, a manual review of access control, and live-site header checks.
+
+---
+
 ## Why
 
 The AI agent ecosystem is growing faster than its security tooling. In January 2026 alone:

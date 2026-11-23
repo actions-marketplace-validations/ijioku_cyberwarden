@@ -1,11 +1,10 @@
 {
-  "name": "cipherwarden",
+  "name": "cyberwarden",
   "version": "1.7.0",
-  "description": "CipherWarden — AI & Production Security Auditor (MIT-licensed fork of affaan-m/agentshield with 13 extended Defense-in-Depth rules).",
+  "description": "CyberWarden — AI & Production Security Auditor (MIT-licensed fork of affaan-m/agentshield with 13 extended Defense-in-Depth rules).",
   "type": "module",
   "bin": {
-    "cipherwarden": "./dist/index.js",
-    "agentshield": "./dist/index.js"
+    "cyberwarden": "./dist/index.js"
   },
   "exports": {
     ".": {
@@ -49,11 +48,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/affaan-m/agentshield.git"
+    "url": "git+https://github.com/ijioku/cyberwarden.git"
   },
-  "homepage": "https://github.com/affaan-m/agentshield#readme",
+  "homepage": "https://github.com/ijioku/cyberwarden#readme",
   "bugs": {
-    "url": "https://github.com/affaan-m/agentshield/issues"
+    "url": "https://github.com/ijioku/cyberwarden/issues"
   },
   "files": [
     "dist/",

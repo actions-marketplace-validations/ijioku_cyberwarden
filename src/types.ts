@@ -46,7 +46,9 @@ export type FindingCategory =
   | "injection"
   | "exposure"
   | "exfiltration"
-  | "misconfiguration";
+  | "misconfiguration"
+  // Web-app code problems found by the --web scan (SQL injection, XSS, CORS and so on)
+  | "webapp";
 
 // ─── Fix Suggestion ────────────────────────────────────────
 
@@ -94,6 +96,16 @@ export type ConfigFileType =
   | "hermes-yaml"
   | "harness-json"
   | "plugin-manifest"
+  // Web-app source code (.js, .ts, .jsx, .tsx, .mjs, .cjs) found by the --web scan
+  | "web-code"
+  // Web pages (.html) found by the --web scan
+  | "web-html"
+  // Environment files (.env, .env.local and so on) found by the --web scan
+  | "web-env"
+  // The project's .gitignore file, found by the --web scan
+  | "web-gitignore"
+  // A list of secret-looking files git is tracking, read from .git/index by the --web scan
+  | "web-git-tracked"
   | "unknown";
 
 // ─── Scanner Rule ──────────────────────────────────────────
@@ -137,6 +149,8 @@ export interface ScoreBreakdown {
   readonly hooks: number;
   readonly mcp: number;
   readonly agents: number;
+  // Web-app score, only present when the scan ran with --web
+  readonly webapp?: number;
 }
 
 export interface SkillHealthSummary {

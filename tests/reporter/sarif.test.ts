@@ -52,7 +52,7 @@ describe("renderSarifReport", () => {
     expect(sarif.version).toBe("2.1.0");
     expect(sarif.$schema).toContain("sarif-2.1.0");
     expect(sarif.runs).toHaveLength(1);
-    expect(sarif.runs[0].tool.driver.name).toBe("AgentShield");
+    expect(sarif.runs[0].tool.driver.name).toBe("CyberWarden");
   });
 
   it("maps findings to rules and results", () => {

@@ -654,7 +654,7 @@ describe("writeEvidencePack", () => {
     });
 
     expect(text.status).toBe(0);
-    expect(text.stdout).toContain("AgentShield Evidence Pack Inspection");
+    expect(text.stdout).toContain("CyberWarden Evidence Pack Inspection");
     expect(text.stdout).toContain("Score:       72/100 (C); 1 findings");
     expect(text.stdout).toContain("Policy:      failed");
     expect(text.stdout).toContain("Baseline:    regressed");
@@ -1043,7 +1043,7 @@ describe("writeEvidencePack", () => {
     });
 
     expect(text.status).toBe(0);
-    expect(text.stdout).toContain("AgentShield Evidence Pack Fleet");
+    expect(text.stdout).toContain("CyberWarden Evidence Pack Fleet");
     expect(text.stdout).toContain("Packs:       2 total, 2 verified, 0 invalid");
     expect(text.stdout).toContain("Readback:    blocked; digest sha256:");
     expect(text.stdout).toContain("owners 1; review items 1");

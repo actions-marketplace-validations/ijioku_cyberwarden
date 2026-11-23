@@ -43,7 +43,7 @@ export function renderSarifReport(
         {
           tool: {
             driver: {
-              name: "AgentShield",
+              name: "CyberWarden",
               informationUri: "https://github.com/affaan-m/agentshield",
               rules,
             },

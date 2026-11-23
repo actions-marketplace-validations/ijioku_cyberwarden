@@ -60,7 +60,8 @@ export function calculateScore(result: ScanResult): SecurityReport {
   const { findings, target, skillHealth, harnessAdapters } = result;
   const defenses = detectDefenses(target.files);
   const summary = summarizeFindings(findings, target.files.length, defenses.length);
-  const score = computeScore(findings);
+  // Only add the web-app score bar when the user asked for a --web scan
+  const score = computeScore(findings, result.webScan === true);
 
   return {
     timestamp: new Date().toISOString(),
@@ -94,13 +95,15 @@ function summarizeFindings(
   };
 }
 
-function computeScore(findings: ReadonlyArray<Finding>): SecurityScore {
+function computeScore(findings: ReadonlyArray<Finding>, includeWebApp = false): SecurityScore {
   const categoryDeductions: Record<string, number> = {
     secrets: 0,
     permissions: 0,
     hooks: 0,
     mcp: 0,
     agents: 0,
+    // Points lost to web-app findings (only shown when includeWebApp is true)
+    webapp: 0,
   };
   const templateInventoryDeductions = new Map<string, number>();
 
@@ -137,12 +140,21 @@ function computeScore(findings: ReadonlyArray<Finding>): SecurityScore {
     hooks: roundedCategoryScore(maxCategoryScore, categoryDeductions.hooks),
     mcp: roundedCategoryScore(maxCategoryScore, categoryDeductions.mcp),
     agents: roundedCategoryScore(maxCategoryScore, categoryDeductions.agents),
+    // Add a sixth "webapp" score only for --web scans, so normal scans keep their exact old scores
+    ...(includeWebApp
+      ? { webapp: roundedCategoryScore(maxCategoryScore, categoryDeductions.webapp) }
+      : {}),
   };
 
   // Overall score = average of category scores
-  const categoryScores = Object.values(breakdown);
+  // The five original AI-config category scores (the web-app score is handled separately)
+  const configScores = [breakdown.secrets, breakdown.permissions, breakdown.hooks, breakdown.mcp, breakdown.agents];
+  // Average of the AI-config categories, exactly as the original tool calculates it
+  const configAverage = configScores.reduce((sum, s) => sum + s, 0) / configScores.length;
+  // CyberWarden: in a --web scan the web app counts for half of the overall score,
+  // so a badly broken app can't hide behind five perfect AI-config scores
   const numericScore = Math.round(
-    categoryScores.reduce((sum, s) => sum + s, 0) / categoryScores.length
+    breakdown.webapp === undefined ? configAverage : (configAverage + breakdown.webapp) / 2
   );
   const grade = scoreToGrade(numericScore);
 
@@ -194,6 +206,8 @@ function mapToScoreCategory(category: string): string {
     injection: "agents",    // prompt injection → agents category
     exposure: "hooks",      // data exposure via hooks/exfiltration
     misconfiguration: "permissions",  // config issues → permissions
+    // Web-app code findings get their own score bar
+    webapp: "webapp",
   };
   return mapping[category] ?? "agents";
 }
