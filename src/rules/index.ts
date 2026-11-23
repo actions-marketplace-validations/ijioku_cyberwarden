@@ -14,6 +14,7 @@ import { codexRules } from "./codex.js";
 import { hermesRules } from "./hermes.js";
 import { claudeCodeRules } from "./claude-code.js";
 import { harnessRules } from "./harnesses.js";
+import { defenseInDepthRules } from "./defense-in-depth.js"; // Import our 7 extended Defense-in-Depth security rules.
 
 /**
  * Returns all built-in security rules.
@@ -38,5 +39,6 @@ export function getBuiltinRules(): ReadonlyArray<Rule> {
     ...hermesRules,
     ...claudeCodeRules,
     ...harnessRules,
+    ...defenseInDepthRules, // Register our 7 new Defense-in-Depth rules alongside built-in AgentShield rules.
   ];
 }

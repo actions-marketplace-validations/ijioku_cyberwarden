@@ -1,0 +1,7 @@
+{
+  "name": "defense-in-depth-demo",
+  "version": "1.0.0",
+  "dependencies": {
+    "example-unpinned-lib": "latest"
+  }
+}
