@@ -188,6 +188,58 @@ const DEFENSE_IN_DEPTH_SPECS: ReadonlyArray<DefensePatternRule> = [ // List all 
       "Mask or redact personal identifiers (BVN, NIN, SSN) before logging, collect only necessary fields, and encrypt stored PII at rest.", // Actionable fix guidance.
     fixAfter: "logger.info({ event: 'kyc_checked', userId }); // Redact BVN/NIN per NDPA 2023", // Safe replacement snippet.
   }, // End Rule 13.
+  { // Start Rule 14: Mass assignment ("role": "admin" injection).
+    id: "defense-mass-assignment", // Unique ID for the mass assignment rule.
+    name: "Mass Assignment Passing Raw req.body Directly Into Database Write", // Display title for the mass assignment rule.
+    description: // Explain why saving raw req.body lets attackers escalate privileges.
+      "Passing raw req.body straight into create/update/Object.assign lets attackers inject hidden fields like role: 'admin' or isAdmin: true.", // Plain-English risk description.
+    severity: "critical", // Mark as critical because it allows instant admin takeover.
+    category: "misconfiguration", // Group under misconfiguration.
+    pattern: // Match ORM create/update or Object.assign consuming raw req.body directly.
+      /(?:\.(?:create|update|insert|findByIdAndUpdate)\s*\(\s*req\.body\s*\)|Object\.assign\s*\(\s*user\s*,\s*req\.body\s*\))/i, // Case-insensitive regex for mass assignment.
+    fixDescription: // Explain how to prevent mass assignment.
+      "Explicitly allowlist only the fields users are allowed to edit (e.g., const { name, bio } = schema.parse(req.body)) before saving to the database.", // Actionable fix guidance.
+    fixAfter: "const { name, bio } = profileSchema.parse(req.body); await User.update({ name, bio });", // Safe replacement snippet.
+  }, // End Rule 14.
+  { // Start Rule 15: Predictable Math.random() used for tokens/OTPs.
+    id: "defense-math-random-token", // Unique ID for the predictable randomness rule.
+    name: "Predictable Math.random() Used for Security Token, Session, or OTP", // Display title for the Math.random rule.
+    description: // Explain why Math.random() is unsafe for security tokens or OTPs.
+      "Math.random() is not cryptographically secure—attackers can predict tokens, reset links, or OTP codes generated with it.", // Plain-English risk description.
+    severity: "high", // Mark as high severity because predictable tokens break auth.
+    category: "secrets", // Group under secrets.
+    pattern: // Match token/otp/secret/session/code assignments using Math.random().
+      /(?:token|otp|secret|sessionId|resetCode|apiKey)\s*=\s*[^\n;]*Math\.random\s*\(\s*\)/i, // Case-insensitive regex for Math.random() tokens.
+    fixDescription: // Explain how to generate cryptographically secure tokens.
+      "Use Node's crypto.randomBytes(), crypto.randomInt(), or crypto.randomUUID() for all tokens, sessions, and OTP codes.", // Actionable fix guidance.
+    fixAfter: "const token = crypto.randomBytes(32).toString('hex'); // Cryptographically secure", // Safe replacement snippet.
+  }, // End Rule 15.
+  { // Start Rule 16: Default/fallback admin passwords or exposed dotfiles.
+    id: "defense-default-admin-or-dotfiles", // Unique ID for default passwords & exposed dotfiles.
+    name: "Default Fallback Admin Password or Exposed Dotfiles (.env / .git)", // Display title for default credentials/dotfiles rule.
+    description: // Explain why fallback passwords like 'changeme' or serving dotfiles is dangerous.
+      "Leaving fallback passwords ('changeme', 'admin123') in code or serving dotfiles (.env, .git) lets automated scanners take over your live server.", // Plain-English risk description.
+    severity: "critical", // Mark as critical because default creds and exposed .env give instant full access.
+    category: "exposure", // Group under exposure.
+    pattern: // Match fallback 'changeme'/'admin123' passwords or Express static dotfiles: 'allow'.
+      /(?:(?:\|\||\?\?)\s*["'](?:changeme|admin123|password123|default123)["']|dotfiles\s*:\s*["']allow["'])/i, // Case-insensitive regex for default passwords or dotfile exposure.
+    fixDescription: // Explain how to eliminate fallback passwords and block dotfiles.
+      "Fail startup if required admin secrets are missing from environment variables, and set dotfiles: 'deny' on static file servers.", // Actionable fix guidance.
+    fixAfter: "const adminPass = process.env.ADMIN_PASSWORD; if (!adminPass) throw new Error('ADMIN_PASSWORD required');", // Safe replacement snippet.
+  }, // End Rule 16.
+  { // Start Rule 17: Unprotected OTP or password-change flow.
+    id: "defense-otp-or-password-change-unsafe", // Unique ID for OTP/password-change protection.
+    name: "Unprotected OTP Verification or Password Change Skipping Current Password", // Display title for OTP/password-change rule.
+    description: // Explain why unlimited OTP guesses or skipping current-password checks compromises accounts.
+      "Allowing unlimited OTP retries (especially on WhatsApp/phone logins) or letting users change email/password without verifying their current password enables account takeover.", // Plain-English risk description.
+    severity: "high", // Mark as high severity for account takeover risk.
+    category: "misconfiguration", // Group under misconfiguration.
+    pattern: // Match explicit OTP retry bypasses or password/email changes skipping current password checks.
+      /(?:otpMaxAttempts\s*[:=]\s*(?:0|Infinity|null)|skipCurrentPasswordCheck\s*[:=]\s*true)/i, // Case-insensitive regex for unsafe OTP/password-change flags.
+    fixDescription: // Explain how to harden OTP and credential changes.
+      "Cap OTP attempts (e.g., max 5 tries with 5–10 min lockout + short 5-minute expiry) and always require the current password before changing email or password.", // Actionable fix guidance.
+    fixAfter: "const otpMaxAttempts = 5; // Lock temporarily after 5 wrong tries and expire OTP in 5 mins", // Safe replacement snippet.
+  }, // End Rule 17.
 ]; // End of DEFENSE_IN_DEPTH_SPECS array.
 
 /**

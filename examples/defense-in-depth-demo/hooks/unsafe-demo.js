@@ -11,3 +11,7 @@ const aiReply = await llm.chat({ messages: req.body.messages }); // Triggers Rul
 res.cookie("sid", token, { httpOnly: false, secure: false }); // Triggers Rule 11: insecure session cookie flags.
 const badHash = crypto.createHash("md5").update(password).digest("hex"); // Triggers Rule 12: weak MD5 password hashing.
 console.log("Customer KYC BVN:", user.bvn); // Triggers Rule 13: unmasked BVN/NIN logging (NDPA 2023).
+await User.update(req.body); // Triggers Rule 14: mass assignment allowing hidden role: 'admin'.
+const otp = Math.random().toString().slice(2, 8); // Triggers Rule 15: predictable Math.random() OTP.
+const adminPass = process.env.ADMIN_PASS || "changeme"; // Triggers Rule 16: default fallback admin password.
+const otpConfig = { otpMaxAttempts: Infinity }; // Triggers Rule 17: unlimited OTP retries.

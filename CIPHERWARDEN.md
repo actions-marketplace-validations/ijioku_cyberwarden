@@ -4,7 +4,7 @@
 
 ## What CipherWarden Adds Beyond AgentShield
 
-In addition to all 15 built-in AgentShield rule modules (secrets, permissions, hooks, hidden curls/pipes, MCP CVEs, tool poisoning, skills, prompt injection defense), **CipherWarden** adds **13 Production Defense-in-Depth Rules** (`src/rules/defense-in-depth.ts`):
+In addition to all 15 built-in AgentShield rule modules (secrets, permissions, hooks, hidden curls/pipes, MCP CVEs, tool poisoning, skills, prompt injection defense), **CipherWarden** adds **17 Production Defense-in-Depth Rules** (`src/rules/defense-in-depth.ts`):
 
 1. `defense-db-rls-disabled` — Disabled/wide-open Postgres & Supabase Row-Level Security (RLS) or exposed `service_role` keys.
 2. `defense-ssrf-internal-url` — SSRF targeting cloud metadata (`169.254.169.254`, `metadata.google.internal`) or unvalidated user fetch URLs.
@@ -19,6 +19,10 @@ In addition to all 15 built-in AgentShield rule modules (secrets, permissions, h
 11. `defense-insecure-session-cookie` — Session cookies setting `httpOnly: false` or `secure: false`.
 12. `defense-weak-password-hash` — Fast password hashes (`md5`, `sha1`, plain `sha256`) instead of `scrypt` / `Argon2id` / `bcrypt`.
 13. `defense-ndpa-pii-exposure` — Unmasked personal identifiers (`BVN`, `NIN`, `SSN`, `passportNumber`) logged or exposed (NDPA 2023 compliance).
+14. `defense-mass-assignment` — Passing raw `req.body` directly into DB writes (`User.update(req.body)`), enabling `"role": "admin"` injection.
+15. `defense-math-random-token` — Using predictable `Math.random()` for tokens, sessions, reset codes, or OTPs instead of `crypto`.
+16. `defense-default-admin-or-dotfiles` — Leaving fallback passwords (`"changeme"`, `"admin123"`) or allowing `.env`/`.git` dotfile serving.
+17. `defense-otp-or-password-change-unsafe` — Unlimited OTP retries or skipping current-password checks on email/password changes.
 
 ## Quick Demo
 

@@ -124,6 +124,42 @@ describe("CipherWarden defenseInDepthRules (13 rules)", () => { // Group all uni
     expect(findings.some((f) => f.id === "defense-ndpa-pii-exposure")).toBe(true); // Verify Rule 13 fires.
   }); // End Rule 13 test.
 
+  it("flags mass assignment passing raw req.body into DB write", () => { // Test Rule 14: Mass assignment protection.
+    const findings = runAllDefenseRules({ // Run rules on a sample profile update route.
+      path: "hooks/profile.js", // Sample file path.
+      type: "hook-code", // Sample file type.
+      content: "await User.update(req.body);", // Risky mass assignment allowing role: 'admin'.
+    }); // End rule run.
+    expect(findings.some((f) => f.id === "defense-mass-assignment")).toBe(true); // Verify Rule 14 fires.
+  }); // End Rule 14 test.
+
+  it("flags Math.random() used for security tokens or OTPs", () => { // Test Rule 15: Secure randomness check.
+    const findings = runAllDefenseRules({ // Run rules on a sample token generator.
+      path: "hooks/token.js", // Sample file path.
+      type: "hook-code", // Sample file type.
+      content: "const resetCode = Math.random().toString(36).slice(2);", // Risky predictable token.
+    }); // End rule run.
+    expect(findings.some((f) => f.id === "defense-math-random-token")).toBe(true); // Verify Rule 15 fires.
+  }); // End Rule 15 test.
+
+  it("flags default fallback admin passwords or exposed dotfiles", () => { // Test Rule 16: Default credentials / dotfiles.
+    const findings = runAllDefenseRules({ // Run rules on a sample server config.
+      path: "hooks/server.js", // Sample file path.
+      type: "hook-code", // Sample file type.
+      content: "const pass = process.env.ADMIN_PASS || 'changeme';", // Risky fallback admin password.
+    }); // End rule run.
+    expect(findings.some((f) => f.id === "defense-default-admin-or-dotfiles")).toBe(true); // Verify Rule 16 fires.
+  }); // End Rule 16 test.
+
+  it("flags unsafe OTP retry limits or skipped current-password checks", () => { // Test Rule 17: OTP & password-change safety.
+    const findings = runAllDefenseRules({ // Run rules on a sample auth settings file.
+      path: "hooks/otp.js", // Sample file path.
+      type: "hook-code", // Sample file type.
+      content: "const authCfg = { otpMaxAttempts: Infinity, skipCurrentPasswordCheck: true };", // Risky unlimited OTP attempts.
+    }); // End rule run.
+    expect(findings.some((f) => f.id === "defense-otp-or-password-change-unsafe")).toBe(true); // Verify Rule 17 fires.
+  }); // End Rule 17 test.
+
   it("produces zero findings on clean, secure code", () => { // Verify clean code has zero false positives.
     const findings = runAllDefenseRules({ // Run rules on a safe example.
       path: "hooks/safe.js", // Safe file path.
