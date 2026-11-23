@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.0] - 2026-11-23 (CyberWarden)
+
+First CyberWarden release, built on AgentShield 1.6.0.
+
+- Renamed to CyberWarden: package `cyberwarden`, command `cyberwarden`, CyberWarden report titles.
+- 23 web-app rules (`--web`): SQL injection, XSS, code injection, secrets in browser code or git, hardcoded fallbacks, weak tokens and password hashes, cookies, CORS, CSP, headers, body limits, rate limits, webhook signatures, open redirects, path traversal, error leaks, browser-trusted payments, and AI prompt and tool safety.
+- 12 Defense-in-Depth rules on every scan: database RLS, SSRF, uploads, race conditions, unpinned packages, secrets in logs or disabled TLS, Paystack/Flutterwave/WhatsApp webhooks, chatbot history, NDPA personal data, mass assignment, exposed dotfiles, and OTP or password-change safety.
+- New `--format dashboard`: an offline, single-file interactive dashboard (overview, findings, every check, fix plan, files, compliance, glossary) with System/Dark/Light themes and phone layouts.
+- Fixed: npm integrity checksums in `package-lock.json` are no longer reported as Azure storage keys.
+- Removed AgentShield's sponsor material, internal notes, logos and the old results.json dashboard. The detailed upstream reference moved to `docs/agentshield-reference.md`.
+
 ## [1.6.0] - 2026-09-10
 
 1.5.0 shipped six months of accumulated work, but it did not touch the thing people actually run into first: the scanner only understood the Claude Code layout of early 2026, it penalized the defenses it recommended, and it missed the broadest grants while flagging the narrow ones. 1.6.0 is the release that addresses that. It closes every issue that was open on the tracker, lands or supersedes every open pull request, moves the scanner to the September 2026 shape of Claude Code, Codex CLI, Hermes, Cursor, Gemini CLI, Copilot, OpenCode, Cline, and Roo, and adds a benchmark against the comparable scanners so the gaps are written down rather than guessed at.

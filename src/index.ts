@@ -10,6 +10,7 @@ import { calculateScore } from "./reporter/score.js";
 import { renderTerminalReport } from "./reporter/terminal.js";
 import { renderJsonReport, renderMarkdownReport } from "./reporter/json.js";
 import { renderHtmlReport } from "./reporter/html.js";
+import { renderDashboard } from "./reporter/dashboard.js";
 import { renderSarifReport } from "./reporter/sarif.js";
 import {
   inspectEvidencePack,
@@ -284,7 +285,7 @@ program
   .option("-p, --path <path>", "Path to scan (default: ~/.claude or current dir)")
   // CyberWarden: opt-in web-app checks (SQL injection, XSS, CORS, cookies, webhooks, AI chat and more)
   .option("--web", "Also scan web-app code for common security bugs (CyberWarden)", false)
-  .option("-f, --format <format>", "Output format: terminal, json, markdown, html, sarif", "terminal")
+  .option("-f, --format <format>", "Output format: terminal, json, markdown, html, dashboard, sarif", "terminal")
   .option("-o, --output <path>", "Write the primary report output to a file")
   .option("--fix", "Auto-apply safe fixes", false)
   .option("--opus", "Enable Claude Opus multi-agent deep analysis", false)
@@ -447,6 +448,14 @@ program
         break;
       case "html":
         renderedReport = renderHtmlReport(report);
+        break;
+      // CyberWarden: the interactive dashboard (one offline HTML file with every finding, check and fix)
+      case "dashboard":
+        renderedReport = renderDashboard(report, {
+          web: options.web === true,
+          version: program.version() ?? "unknown",
+          extraRules,
+        });
         break;
       case "sarif":
         renderedReport = renderSarifReport(report, {
@@ -1217,7 +1226,7 @@ policyCmd
     console.log(`\n  Example policy written to: ${outputPath}`);
     console.log(`  Policy pack: ${packResult.data}`);
     console.log(`  Edit the file to match your organization's requirements.`);
-    console.log(`  Then run: agentshield scan --policy ${options.output}\n`);
+    console.log(`  Then run: cyberwarden scan --policy ${options.output}\n`);
   });
 
 policyCmd
@@ -1266,7 +1275,7 @@ policyCmd
       console.log(`  - ${pack.id}: ${pack.file} (${pack.sha256})`);
     }
     if (manifest.packs[0]) {
-      console.log(`  Then run: agentshield scan --policy ${join(options.outputDir, manifest.packs[0].file)}\n`);
+      console.log(`  Then run: cyberwarden scan --policy ${join(options.outputDir, manifest.packs[0].file)}\n`);
     } else {
       console.log("");
     }

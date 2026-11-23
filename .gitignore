@@ -4,6 +4,9 @@ coverage/
 .env
 .env.local
 .DS_Store
-dashboard/results.json
 .dmux/
 .dmux-hooks/
+
+# Generated CyberWarden dashboards
+cyberwarden-report.html
+*-dashboard.html

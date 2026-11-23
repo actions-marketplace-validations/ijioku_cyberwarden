@@ -1,7 +1,7 @@
 {
   "name": "cyberwarden",
   "version": "1.7.0",
-  "description": "CyberWarden — AI & Production Security Auditor (MIT-licensed fork of affaan-m/agentshield with 13 extended Defense-in-Depth rules).",
+  "description": "Security auditor for AI agent setups and web apps: secrets, permissions, hooks, MCP, prompt injection, plus web-app and defense-in-depth checks with an offline dashboard. Built on AgentShield (MIT).",
   "type": "module",
   "bin": {
     "cyberwarden": "./dist/index.js"
@@ -57,7 +57,6 @@
   "files": [
     "dist/",
     "action.yml",
-    "assets/ito.svg",
     "CHANGELOG.md",
     "README.md",
     "LICENSE"
@@ -66,16 +65,16 @@
     "@anthropic-ai/sdk": "^0.39.0",
     "chalk": "^5.4.1",
     "commander": "^13.1.0",
-    "glob": "^11.0.1",
     "smol-toml": "^1.8.0",
     "yaml": "^2.7.0",
-    "zod": "^3.24.2"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
     "@types/node": "^22.13.0",
     "@vitest/coverage-v8": "^4.1.11",
     "eslint": "^9.19.0",
+    "glob": "^14.0.6",
     "globals": "^17.4.0",
     "tsup": "^8.3.6",
     "tsx": "^4.19.2",

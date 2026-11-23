@@ -312,7 +312,6 @@ Concrete examples:
 - `plugin-manifest`: `hooks/hooks.json`
 - `hook-code`: `scripts/hooks/session-start.js`
 
-For the current false-positive and scoring follow-up queue, see [`false-positive-audit.md`](./false-positive-audit.md), especially [`Pattern Signatures In Recent Alerts`](./false-positive-audit.md#pattern-signatures-in-recent-alerts), [`Common Noisy File Archetypes`](./false-positive-audit.md#common-noisy-file-archetypes), and [`Triage Rules For Current Reports`](./false-positive-audit.md#triage-rules-for-current-reports).
 
 ## MiniClaw Package API
 

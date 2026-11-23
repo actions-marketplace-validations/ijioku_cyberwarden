@@ -6091,8 +6091,8 @@ var init_mcp = __esm({
           const findings = [];
           function isNpxCommand(cmd) {
             if (!cmd) return false;
-            const basename9 = cmd.split(/[\\/]/).pop() ?? "";
-            return basename9 === "npx" || basename9 === "npx.cmd" || basename9 === "npx.exe";
+            const basename10 = cmd.split(/[\\/]/).pop() ?? "";
+            return basename10 === "npx" || basename10 === "npx.cmd" || basename10 === "npx.exe";
           }
           const npxValueTakingOptions = /* @__PURE__ */ new Set([
             "-p",
@@ -14928,17 +14928,11 @@ function findLineNumber10(content, matchIndex) {
 }
 function buildRule(spec) {
   return {
-    // Return a standard Rule object.
     id: spec.id,
-    // Copy the unique rule ID.
     name: spec.name,
-    // Copy the rule display name.
     description: spec.description,
-    // Copy the rule description.
     severity: spec.severity,
-    // Copy the rule severity level.
     category: spec.category,
-    // Copy the finding category.
     check(file) {
       if (spec.fileTypes && !spec.fileTypes.includes(file.type)) {
         return [];
@@ -14950,42 +14944,25 @@ function buildRule(spec) {
       const line = findLineNumber10(file.content, match.index);
       const evidence = match[0].trim().slice(0, 120);
       return [
-        // Return a single structured Finding describing the issue and fix.
         {
-          // Begin Finding object.
           id: spec.id,
-          // Attach the rule ID to the finding.
           severity: spec.severity,
-          // Attach the severity level.
           category: spec.category,
-          // Attach the finding category.
           title: spec.name,
-          // Attach the finding title.
           description: spec.description,
-          // Attach the plain-English explanation.
           file: file.path,
-          // Record which file triggered the finding.
           line,
-          // Record the exact line number.
           evidence,
-          // Record the matched snippet for quick review.
+          // Attach a guided fix suggestion.
           fix: {
-            // Attach a guided fix suggestion.
             description: spec.fixDescription,
-            // Explain how to remediate the issue.
             before: evidence,
-            // Show the risky code that was found.
             after: spec.fixAfter,
-            // Show the safe replacement pattern.
             auto: false
-            // Require human review before applying security architecture fixes.
           }
-          // End fix object.
         }
-        // End Finding object.
       ];
     }
-    // End check function.
   };
 }
 var DEFENSE_IN_DEPTH_SPECS, defenseInDepthRules;
@@ -14993,354 +14970,140 @@ var init_defense_in_depth = __esm({
   "src/rules/defense-in-depth.ts"() {
     "use strict";
     DEFENSE_IN_DEPTH_SPECS = [
-      // List all 12 CyberWarden Defense-in-Depth security checks.
+      // Database Row-Level Security (RLS) & least-privilege check.
       {
-        // Start Rule 1: Database Row-Level Security (RLS) & least-privilege check.
         id: "defense-db-rls-disabled",
-        // Unique ID for the database RLS rule.
         name: "Database Row-Level Security Disabled or Overly Permissive",
-        // Display title for the RLS rule.
-        description: (
-          // Explain why weak or disabled RLS is dangerous.
-          "Disabling Row-Level Security (RLS), using wide-open USING (true) policies, or exposing a service_role database key lets any user read or alter other users' rows."
-        ),
-        // Plain-English risk description.
+        description: "Disabling Row-Level Security (RLS), using wide-open USING (true) policies, or exposing a service_role database key lets any user read or alter other users' rows.",
         severity: "critical",
-        // Mark as critical because it exposes all user data.
         category: "misconfiguration",
-        // Group under misconfiguration.
-        pattern: (
-          // Match disabled RLS, wide-open RLS policies, or raw service_role keys in configs/scripts.
-          /(?:DISABLE\s+ROW\s+LEVEL\s+SECURITY|USING\s*\(\s*true\s*\)|WITH\s+CHECK\s*\(\s*true\s*\)|SUPABASE_SERVICE_ROLE_KEY\s*[:=]\s*["']eyJ)/i
-        ),
-        // Case-insensitive regex for RLS bypasses.
-        fixDescription: (
-          // Explain how to fix the database security issue.
-          "Enable Row-Level Security (ENABLE ROW LEVEL SECURITY), scope policies to auth.uid() = user_id, and keep service_role keys strictly in server-side environment variables."
-        ),
-        // Actionable fix guidance.
+        pattern: /(?:DISABLE\s+ROW\s+LEVEL\s+SECURITY|USING\s*\(\s*true\s*\)|WITH\s+CHECK\s*\(\s*true\s*\)|SUPABASE_SERVICE_ROLE_KEY\s*[:=]\s*["']eyJ)/i,
+        fixDescription: "Enable Row-Level Security (ENABLE ROW LEVEL SECURITY), scope policies to auth.uid() = user_id, and keep service_role keys strictly in server-side environment variables.",
         fixAfter: "ALTER TABLE items ENABLE ROW LEVEL SECURITY; -- Policy: USING (auth.uid() = user_id)"
-        // Safe replacement snippet.
       },
-      // End Rule 1.
+      // Server-Side Request Forgery (SSRF) protection.
       {
-        // Start Rule 2: Server-Side Request Forgery (SSRF) protection.
         id: "defense-ssrf-internal-url",
-        // Unique ID for the SSRF rule.
         name: "SSRF Risk Targeting Internal or Cloud Metadata Address",
-        // Display title for the SSRF rule.
-        description: (
-          // Explain why calling internal or metadata IPs is dangerous.
-          "Fetching cloud metadata endpoints (169.254.169.254) or passing unvalidated user URLs into fetch/curl lets attackers spy on private internal services and steal cloud credentials."
-        ),
-        // Plain-English risk description.
+        description: "Fetching cloud metadata endpoints (169.254.169.254) or passing unvalidated user URLs into fetch/curl lets attackers spy on private internal services and steal cloud credentials.",
         severity: "critical",
-        // Mark as critical because SSRF can leak cloud IAM credentials.
         category: "exfiltration",
-        // Group under exfiltration.
-        pattern: (
-          // Match cloud metadata URLs or unvalidated user input inside fetch/axios/curl.
-          /(?:169\.254\.169\.254|metadata\.google\.internal|(?:fetch|axios\.get|axios\.post)\s*\(\s*(?:req\.(?:body|query|params)\.\w+|userUrl))/i
-        ),
-        // Case-insensitive regex for SSRF targets.
-        fixDescription: (
-          // Explain how to block SSRF attacks.
-          "Validate outbound URLs against an explicit domain allowlist and block private/link-local IP ranges (127.0.0.0/8, 10.0.0.0/8, 169.254.169.254)."
-        ),
-        // Actionable fix guidance.
+        pattern: /(?:169\.254\.169\.254|metadata\.google\.internal|(?:fetch|axios\.get|axios\.post)\s*\(\s*(?:req\.(?:body|query|params)\.\w+|userUrl))/i,
+        fixDescription: "Validate outbound URLs against an explicit domain allowlist and block private/link-local IP ranges (127.0.0.0/8, 10.0.0.0/8, 169.254.169.254).",
         fixAfter: "assertAllowedExternalUrl(userUrl); await fetch(userUrl);"
-        // Safe replacement snippet.
       },
-      // End Rule 2.
+      // Unsafe file upload handling.
       {
-        // Start Rule 3: Unsafe file upload handling.
         id: "defense-unsafe-file-upload",
-        // Unique ID for the file upload rule.
         name: "Unsafe File Upload Using Unsanitized Filename or Executable Types",
-        // Display title for the file upload rule.
-        description: (
-          // Explain why raw upload filenames and executable uploads are dangerous.
-          "Saving uploaded files with their original user-supplied filename or allowing executable extensions (.php, .sh, .exe) enables path traversal and remote code execution."
-        ),
-        // Plain-English risk description.
+        description: "Saving uploaded files with their original user-supplied filename or allowing executable extensions (.php, .sh, .exe) enables path traversal and remote code execution.",
         severity: "high",
-        // Mark as high severity.
         category: "injection",
-        // Group under injection.
-        pattern: (
-          // Match saving uploads with originalname/filename or allowing dangerous executable extensions.
-          /(?:writeFile(?:Sync)?\s*\([^)]*(?:file\.originalname|req\.file\.filename)|accept\s*[:=]\s*["'][^"']*(?:\.php|\.exe|\.sh|\.bat))/i
-        ),
-        // Case-insensitive regex for unsafe uploads.
-        fixDescription: (
-          // Explain how to harden file uploads.
-          "Validate MIME type and max file size server-side, generate a random UUID filename, and store uploads in isolated object storage (S3/R2/Storage bucket)."
-        ),
-        // Actionable fix guidance.
+        pattern: /(?:writeFile(?:Sync)?\s*\([^)]*(?:file\.originalname|req\.file\.filename)|accept\s*[:=]\s*["'][^"']*(?:\.php|\.exe|\.sh|\.bat))/i,
+        fixDescription: "Validate MIME type and max file size server-side, generate a random UUID filename, and store uploads in isolated object storage (S3/R2/Storage bucket).",
         fixAfter: "const safeName = `${crypto.randomUUID()}.webp`; await uploadToBucket(safeName, buffer);"
-        // Safe replacement snippet.
       },
-      // End Rule 3.
+      // Billing / credit race conditions (double-spend).
       {
-        // Start Rule 5: Billing / credit race conditions (double-spend).
         id: "defense-race-condition-billing",
-        // Unique ID for the race-condition rule.
         name: "Potential Double-Spend Race Condition in Credit or Balance Update",
-        // Display title for the race-condition rule.
-        description: (
-          // Explain how non-atomic balance updates allow double-spending.
-          "Reading a user's credit balance and updating it in a separate non-atomic step allows attackers to send parallel requests and spend the same credits multiple times."
-        ),
-        // Plain-English risk description.
+        description: "Reading a user's credit balance and updating it in a separate non-atomic step allows attackers to send parallel requests and spend the same credits multiple times.",
         severity: "high",
-        // Mark as high severity.
         category: "misconfiguration",
-        // Group under misconfiguration.
-        pattern: (
-          // Match simple in-memory subtraction before saving back to a user balance without a transaction.
-          /(?:user\.(?:credits|balance)\s*(?:-=|=\s*user\.(?:credits|balance)\s*-)\s*\w+)/i
-        ),
-        // Case-insensitive regex for non-atomic balance deduction.
-        fixDescription: (
-          // Explain how to prevent double-spend race conditions.
-          "Use an atomic database transaction with a conditional check (e.g., UPDATE users SET credits = credits - $1 WHERE id = $2 AND credits >= $1) and an idempotency key."
-        ),
-        // Actionable fix guidance.
+        pattern: /(?:user\.(?:credits|balance)\s*(?:-=|=\s*user\.(?:credits|balance)\s*-)\s*\w+)/i,
+        fixDescription: "Use an atomic database transaction with a conditional check (e.g., UPDATE users SET credits = credits - $1 WHERE id = $2 AND credits >= $1) and an idempotency key.",
         fixAfter: "await db.transaction(async (tx) => tx.execute('UPDATE users SET credits = credits - $1 WHERE id = $2 AND credits >= $1', [cost, userId]));"
-        // Safe replacement snippet.
       },
-      // End Rule 5.
+      // Supply-chain unpinned dependencies.
       {
-        // Start Rule 6: Supply-chain unpinned dependencies.
         id: "defense-supply-chain-unpinned",
-        // Unique ID for the supply-chain pinning rule.
         name: "Unpinned Wildcard Dependency Version in Package Config",
-        // Display title for the unpinned dependency rule.
-        description: (
-          // Explain why "*" or "latest" dependency versions are a supply-chain risk.
-          "Using wildcard ('*') or 'latest' dependency versions lets a compromised package update pull malicious code into your build automatically."
-        ),
-        // Plain-English risk description.
+        description: "Using wildcard ('*') or 'latest' dependency versions lets a compromised package update pull malicious code into your build automatically.",
         severity: "medium",
-        // Mark as medium severity.
         category: "misconfiguration",
-        // Group under misconfiguration.
         pattern: /"[^"]+"\s*:\s*"(?:\*|latest)"/i,
-        // Match any JSON dependency pinned to "*" or "latest".
-        fixDescription: (
-          // Explain how to pin dependencies safely.
-          "Pin dependencies to explicit semantic versions and commit your lockfile (package-lock.json or pnpm-lock.yaml)."
-        ),
-        // Actionable fix guidance.
+        fixDescription: "Pin dependencies to explicit semantic versions and commit your lockfile (package-lock.json or pnpm-lock.yaml).",
         fixAfter: '"package-name": "^1.2.3"',
-        // Safe replacement snippet.
-        fileTypes: ["package-manager-config"]
         // Only run this check on package manager config files like package.json.
+        fileTypes: ["package-manager-config"]
       },
-      // End Rule 6.
+      // Sensitive secret logging & disabled TLS verification.
       {
-        // Start Rule 7: Sensitive secret logging & disabled TLS verification.
         id: "defense-sensitive-audit-logging",
-        // Unique ID for the sensitive logging / TLS rule.
         name: "Sensitive Credential Logged or TLS Certificate Verification Disabled",
-        // Display title for the logging/TLS rule.
-        description: (
-          // Explain why logging secrets or disabling TLS breaks transport and audit security.
-          "Logging raw passwords/tokens leaks credentials into log files, and disabling TLS verification (rejectUnauthorized: false or NODE_TLS_REJECT_UNAUTHORIZED=0) exposes traffic to man-in-the-middle attacks."
-        ),
-        // Plain-English risk description.
+        description: "Logging raw passwords/tokens leaks credentials into log files, and disabling TLS verification (rejectUnauthorized: false or NODE_TLS_REJECT_UNAUTHORIZED=0) exposes traffic to man-in-the-middle attacks.",
         severity: "high",
-        // Mark as high severity.
         category: "exposure",
-        // Group under exposure.
-        pattern: (
-          // Match console/logger printing secrets or code disabling TLS certificate checks.
-          /(?:NODE_TLS_REJECT_UNAUTHORIZED\s*=\s*["']?0["']?|rejectUnauthorized\s*:\s*false|(?:console\.log|logger\.(?:info|debug))\s*\([^)]*(?:password|apiKey|accessToken|authorization|secret))/i
-        ),
-        // Case-insensitive regex for secret logs & disabled TLS.
-        fixDescription: (
-          // Explain how to fix logging and TLS settings.
-          "Redact passwords, tokens, and secrets before logging, and keep TLS certificate verification enabled in all environments."
-        ),
-        // Actionable fix guidance.
+        pattern: /(?:NODE_TLS_REJECT_UNAUTHORIZED\s*=\s*["']?0["']?|rejectUnauthorized\s*:\s*false|(?:console\.log|logger\.(?:info|debug))\s*\([^)]*(?:password|apiKey|accessToken|authorization|secret))/i,
+        fixDescription: "Redact passwords, tokens, and secrets before logging, and keep TLS certificate verification enabled in all environments.",
         fixAfter: "logger.info({ event: 'user_login', userId }); // Never log raw passwords or tokens"
-        // Safe replacement snippet.
       },
-      // End Rule 7.
+      // Paystack, Flutterwave & Meta/WhatsApp webhook signature verification.
       {
-        // Start Rule 9: Paystack, Flutterwave & Meta/WhatsApp webhook signature verification.
         id: "defense-regional-webhook-unverified",
-        // Unique ID for Paystack/Flutterwave/Meta webhook checks.
         name: "Unverified Paystack, Flutterwave, or WhatsApp/Meta Webhook Handler",
-        // Display title for the regional webhook rule.
-        description: (
-          // Explain why skipping webhook signature checks on Paystack/Flutterwave/Meta is dangerous.
-          "Accepting Paystack, Flutterwave, or Meta/WhatsApp webhooks without verifying x-paystack-signature, verif-hash, or x-hub-signature-256 lets attackers forge fake payments or messages."
-        ),
-        // Plain-English risk description.
+        description: "Accepting Paystack, Flutterwave, or Meta/WhatsApp webhooks without verifying x-paystack-signature, verif-hash, or x-hub-signature-256 lets attackers forge fake payments or messages.",
         severity: "critical",
-        // Mark as critical because forged webhooks unlock unpaid orders or spoof messages.
         category: "misconfiguration",
-        // Group under misconfiguration.
-        pattern: (
-          // Match Paystack/Flutterwave/WhatsApp webhook routes that explicitly skip signature verification.
-          /(?:(?:paystack|flutterwave|whatsapp).*skip(?:Verify|Signature)|verifySignature\s*[:=]\s*false|x-paystack-signature\s*===\s*undefined)/i
-        ),
-        // Case-insensitive regex for skipped regional webhook verification.
-        fixDescription: (
-          // Explain how to verify regional payment and messaging webhooks.
-          "Always verify HMAC signatures using timingSafeEqual (x-paystack-signature for Paystack, verif-hash for Flutterwave, x-hub-signature-256 for Meta/WhatsApp)."
-        ),
-        // Actionable fix guidance.
+        pattern: /(?:(?:paystack|flutterwave|whatsapp).*skip(?:Verify|Signature)|verifySignature\s*[:=]\s*false|x-paystack-signature\s*===\s*undefined)/i,
+        fixDescription: "Always verify HMAC signatures using timingSafeEqual (x-paystack-signature for Paystack, verif-hash for Flutterwave, x-hub-signature-256 for Meta/WhatsApp).",
         fixAfter: "if (!verifyHmacTimingSafe(rawBody, req.headers['x-paystack-signature'], process.env.PAYSTACK_SECRET)) return res.status(401).end();"
-        // Safe replacement snippet.
       },
-      // End Rule 9.
+      // Client-controlled AI chat history spoofing.
       {
-        // Start Rule 10: Client-controlled AI chat history spoofing.
         id: "defense-ai-chat-history-client-trust",
-        // Unique ID for client-trusted AI chat history rule.
         name: "AI Chatbot Trusting Client-Sent Chat History or System Messages",
-        // Display title for the AI chat history rule.
-        description: (
-          // Explain why trusting chat history from req.body lets visitors hijack the AI.
-          "Passing req.body.messages or req.body.chatHistory straight to an LLM lets visitors fake previous assistant replies or inject fake system prompts."
-        ),
-        // Plain-English risk description.
+        description: "Passing req.body.messages or req.body.chatHistory straight to an LLM lets visitors fake previous assistant replies or inject fake system prompts.",
         severity: "high",
-        // Mark as high severity because it enables prompt spoofing and fake leads.
         category: "injection",
-        // Group under injection.
-        pattern: (
-          // Match passing req.body.messages or req.body.chatHistory directly into an AI model call.
-          /(?:messages\s*:\s*req\.body\.(?:messages|chatHistory|history)|chatHistory\s*=\s*req\.body\.(?:messages|chatHistory))/i
-        ),
-        // Case-insensitive regex for client-controlled LLM history.
-        fixDescription: (
-          // Explain how to store AI chat history safely.
-          "Store conversation history on the server tied to the user's session ID and only accept the latest plain user message text from the client."
-        ),
-        // Actionable fix guidance.
+        pattern: /(?:messages\s*:\s*req\.body\.(?:messages|chatHistory|history)|chatHistory\s*=\s*req\.body\.(?:messages|chatHistory))/i,
+        fixDescription: "Store conversation history on the server tied to the user's session ID and only accept the latest plain user message text from the client.",
         fixAfter: "const history = await getServerChatHistory(sessionId); history.push({ role: 'user', content: cleanInput });"
-        // Safe replacement snippet.
       },
-      // End Rule 10.
+      // NDPA 2023 / PII exposure in logs or unmasked dumps.
       {
-        // Start Rule 13: NDPA 2023 / PII exposure in logs or unmasked dumps.
         id: "defense-ndpa-pii-exposure",
-        // Unique ID for NDPA 2023 / personal data privacy checks.
         name: "Unmasked Personal Data (PII / BVN / NIN) Logged or Exposed (NDPA 2023)",
-        // Display title for the PII/NDPA rule.
-        description: (
-          // Explain why exposing raw PII violates NDPA 2023 and user privacy.
-          "Logging or exposing sensitive personal identifiers (BVN, NIN, SSN, raw phone/email dumps) violates Nigeria's Data Protection Act (NDPA 2023) and global privacy standards."
-        ),
-        // Plain-English risk description.
+        description: "Logging or exposing sensitive personal identifiers (BVN, NIN, SSN, raw phone/email dumps) violates Nigeria's Data Protection Act (NDPA 2023) and global privacy standards.",
         severity: "high",
-        // Mark as high severity for regulatory and privacy risk.
         category: "exposure",
-        // Group under exposure.
-        pattern: (
-          // Match logging raw BVN, NIN, SSN, or full user PII objects.
-          /(?:console\.log|logger\.(?:info|debug|warn))\s*\([^)]*(?:\bbvn\b|\bnin\b|\bssn\b|nationalId|passportNumber)/i
-        ),
-        // Case-insensitive regex for unmasked PII logging.
-        fixDescription: (
-          // Explain how to stay NDPA 2023 compliant.
-          "Mask or redact personal identifiers (BVN, NIN, SSN) before logging, collect only necessary fields, and encrypt stored PII at rest."
-        ),
-        // Actionable fix guidance.
+        pattern: /(?:console\.log|logger\.(?:info|debug|warn))\s*\([^)]*(?:\bbvn\b|\bnin\b|\bssn\b|nationalId|passportNumber)/i,
+        fixDescription: "Mask or redact personal identifiers (BVN, NIN, SSN) before logging, collect only necessary fields, and encrypt stored PII at rest.",
         fixAfter: "logger.info({ event: 'kyc_checked', userId }); // Redact BVN/NIN per NDPA 2023"
-        // Safe replacement snippet.
       },
-      // End Rule 13.
+      // Mass assignment ("role": "admin" injection).
       {
-        // Start Rule 14: Mass assignment ("role": "admin" injection).
         id: "defense-mass-assignment",
-        // Unique ID for the mass assignment rule.
         name: "Mass Assignment Passing Raw req.body Directly Into Database Write",
-        // Display title for the mass assignment rule.
-        description: (
-          // Explain why saving raw req.body lets attackers escalate privileges.
-          "Passing raw req.body straight into create/update/Object.assign lets attackers inject hidden fields like role: 'admin' or isAdmin: true."
-        ),
-        // Plain-English risk description.
+        description: "Passing raw req.body straight into create/update/Object.assign lets attackers inject hidden fields like role: 'admin' or isAdmin: true.",
         severity: "critical",
-        // Mark as critical because it allows instant admin takeover.
         category: "misconfiguration",
-        // Group under misconfiguration.
-        pattern: (
-          // Match ORM create/update or Object.assign consuming raw req.body directly.
-          /(?:\.(?:create|update|insert|findByIdAndUpdate)\s*\(\s*req\.body\s*\)|Object\.assign\s*\(\s*user\s*,\s*req\.body\s*\))/i
-        ),
-        // Case-insensitive regex for mass assignment.
-        fixDescription: (
-          // Explain how to prevent mass assignment.
-          "Explicitly allowlist only the fields users are allowed to edit (e.g., const { name, bio } = schema.parse(req.body)) before saving to the database."
-        ),
-        // Actionable fix guidance.
+        pattern: /(?:\.(?:create|update|insert|findByIdAndUpdate)\s*\(\s*req\.body\s*\)|Object\.assign\s*\(\s*user\s*,\s*req\.body\s*\))/i,
+        fixDescription: "Explicitly allowlist only the fields users are allowed to edit (e.g., const { name, bio } = schema.parse(req.body)) before saving to the database.",
         fixAfter: "const { name, bio } = profileSchema.parse(req.body); await User.update({ name, bio });"
-        // Safe replacement snippet.
       },
-      // End Rule 14.
+      // Default/fallback admin passwords or exposed dotfiles.
       {
-        // Start Rule 16: Default/fallback admin passwords or exposed dotfiles.
         id: "defense-default-admin-or-dotfiles",
-        // Unique ID for default passwords & exposed dotfiles.
         name: "Static File Server Exposes Dotfiles (.env / .git)",
-        // Display title for default credentials/dotfiles rule.
-        description: (
-          // Explain why fallback passwords like 'changeme' or serving dotfiles is dangerous.
-          "Serving dotfiles (.env, .git) from a static file server lets automated scanners download your secrets and source code. (Hardcoded fallback passwords are caught by the webapp-secret-env-fallback rule.)"
-        ),
-        // Plain-English risk description.
+        description: "Serving dotfiles (.env, .git) from a static file server lets automated scanners download your secrets and source code. (Hardcoded fallback passwords are caught by the webapp-secret-env-fallback rule.)",
         severity: "critical",
-        // Mark as critical because default creds and exposed .env give instant full access.
         category: "exposure",
-        // Group under exposure.
-        pattern: (
-          // Match fallback 'changeme'/'admin123' passwords or Express static dotfiles: 'allow'.
-          /dotfiles\s*:\s*["']allow["']/i
-        ),
-        // Case-insensitive regex for default passwords or dotfile exposure.
-        fixDescription: (
-          // Explain how to eliminate fallback passwords and block dotfiles.
-          "Fail startup if required admin secrets are missing from environment variables, and set dotfiles: 'deny' on static file servers."
-        ),
-        // Actionable fix guidance.
+        pattern: /dotfiles\s*:\s*["']allow["']/i,
+        fixDescription: "Fail startup if required admin secrets are missing from environment variables, and set dotfiles: 'deny' on static file servers.",
         fixAfter: "const adminPass = process.env.ADMIN_PASSWORD; if (!adminPass) throw new Error('ADMIN_PASSWORD required');"
-        // Safe replacement snippet.
       },
-      // End Rule 16.
+      // Unprotected OTP or password-change flow.
       {
-        // Start Rule 17: Unprotected OTP or password-change flow.
         id: "defense-otp-or-password-change-unsafe",
-        // Unique ID for OTP/password-change protection.
         name: "Unprotected OTP Verification or Password Change Skipping Current Password",
-        // Display title for OTP/password-change rule.
-        description: (
-          // Explain why unlimited OTP guesses or skipping current-password checks compromises accounts.
-          "Allowing unlimited OTP retries (especially on WhatsApp/phone logins) or letting users change email/password without verifying their current password enables account takeover."
-        ),
-        // Plain-English risk description.
+        description: "Allowing unlimited OTP retries (especially on WhatsApp/phone logins) or letting users change email/password without verifying their current password enables account takeover.",
         severity: "high",
-        // Mark as high severity for account takeover risk.
         category: "misconfiguration",
-        // Group under misconfiguration.
-        pattern: (
-          // Match explicit OTP retry bypasses or password/email changes skipping current password checks.
-          /(?:otpMaxAttempts\s*[:=]\s*(?:0|Infinity|null)|skipCurrentPasswordCheck\s*[:=]\s*true)/i
-        ),
-        // Case-insensitive regex for unsafe OTP/password-change flags.
-        fixDescription: (
-          // Explain how to harden OTP and credential changes.
-          "Cap OTP attempts (e.g., max 5 tries with 5\u201310 min lockout + short 5-minute expiry) and always require the current password before changing email or password."
-        ),
-        // Actionable fix guidance.
+        pattern: /(?:otpMaxAttempts\s*[:=]\s*(?:0|Infinity|null)|skipCurrentPasswordCheck\s*[:=]\s*true)/i,
+        fixDescription: "Cap OTP attempts (e.g., max 5 tries with 5\u201310 min lockout + short 5-minute expiry) and always require the current password before changing email or password.",
         fixAfter: "const otpMaxAttempts = 5; // Lock temporarily after 5 wrong tries and expire OTP in 5 mins"
-        // Safe replacement snippet.
       }
-      // End Rule 17.
     ];
     defenseInDepthRules = DEFENSE_IN_DEPTH_SPECS.map(buildRule);
   }
@@ -17695,9 +17458,9 @@ function buildWorkflow(findings) {
   return { phases };
 }
 function compareFindings(left, right) {
-  return SEVERITY_RANK[left.severity] - SEVERITY_RANK[right.severity] || left.file.localeCompare(right.file) || left.id.localeCompare(right.id) || (left.evidence ?? "").localeCompare(right.evidence ?? "");
+  return SEVERITY_RANK2[left.severity] - SEVERITY_RANK2[right.severity] || left.file.localeCompare(right.file) || left.id.localeCompare(right.id) || (left.evidence ?? "").localeCompare(right.evidence ?? "");
 }
-var ZERO_BY_SEVERITY, SEVERITY_RANK;
+var ZERO_BY_SEVERITY, SEVERITY_RANK2;
 var init_remediation = __esm({
   "src/remediation/index.ts"() {
     "use strict";
@@ -17709,7 +17472,7 @@ var init_remediation = __esm({
       low: 0,
       info: 0
     };
-    SEVERITY_RANK = {
+    SEVERITY_RANK2 = {
       critical: 0,
       high: 1,
       medium: 2,
@@ -24209,6 +23972,766 @@ function inlineStyles() {
   `;
 }
 
+// src/reporter/dashboard.ts
+init_rules();
+import { basename as basename8 } from "path";
+
+// src/compliance/index.ts
+var COMPLIANCE_FRAMEWORKS = ["soc2", "pci", "iso"];
+var FRAMEWORK_NAMES = {
+  soc2: "SOC 2 (Trust Services Criteria)",
+  pci: "PCI DSS v4.0",
+  iso: "ISO/IEC 27001:2022 Annex A"
+};
+var CONTROL_MAP = {
+  soc2: {
+    secrets: [{ id: "CC6.1", title: "Logical access - credentials" }, { id: "CC6.3", title: "Access credentials managed" }],
+    permissions: [{ id: "CC6.1", title: "Logical access security" }, { id: "CC6.3", title: "Least-privilege access" }],
+    hooks: [{ id: "CC7.1", title: "Detection of security events" }, { id: "CC8.1", title: "Change management" }],
+    mcp: [{ id: "CC6.6", title: "External access boundaries" }, { id: "CC6.1", title: "Logical access security" }],
+    skills: [{ id: "CC8.1", title: "Unauthorized/changed software" }],
+    agents: [{ id: "CC6.1", title: "Logical access security" }, { id: "CC7.1", title: "Detection of security events" }],
+    injection: [{ id: "CC7.1", title: "Detection of security events" }, { id: "CC8.1", title: "Change management" }],
+    exposure: [{ id: "CC6.1", title: "Logical access security" }],
+    exfiltration: [{ id: "CC6.7", title: "Restricted data transmission" }],
+    misconfiguration: [{ id: "CC7.1", title: "Detection of security events" }],
+    // Web-app code flaws map to secure system development and logical access controls
+    webapp: [{ id: "CC8.1", title: "Change management" }, { id: "CC6.1", title: "Logical access security" }]
+  },
+  pci: {
+    secrets: [{ id: "Req 3", title: "Protect stored account data" }, { id: "Req 8", title: "Identify and authenticate access" }],
+    permissions: [{ id: "Req 7", title: "Restrict access by need-to-know" }],
+    hooks: [{ id: "Req 6", title: "Secure systems and software" }, { id: "Req 10", title: "Log and monitor access" }],
+    mcp: [{ id: "Req 1", title: "Network security controls" }, { id: "Req 6", title: "Secure systems and software" }],
+    skills: [{ id: "Req 6", title: "Secure systems and software" }, { id: "Req 2", title: "Secure configurations" }],
+    agents: [{ id: "Req 6", title: "Secure systems and software" }],
+    injection: [{ id: "Req 6.2", title: "Secure software development" }],
+    exposure: [{ id: "Req 3", title: "Protect stored account data" }],
+    exfiltration: [{ id: "Req 4", title: "Protect data in transmission" }, { id: "Req 1", title: "Network security controls" }],
+    misconfiguration: [{ id: "Req 2", title: "Secure configurations" }],
+    // Web-app code flaws map to PCI's secure software development requirements
+    webapp: [{ id: "Req 6.2", title: "Secure software development" }, { id: "Req 6.4", title: "Public-facing web apps protected" }]
+  },
+  iso: {
+    secrets: [{ id: "A.5.17", title: "Authentication information" }, { id: "A.8.24", title: "Use of cryptography" }],
+    permissions: [{ id: "A.5.15", title: "Access control" }, { id: "A.8.2", title: "Privileged access rights" }],
+    hooks: [{ id: "A.8.16", title: "Monitoring activities" }, { id: "A.8.28", title: "Secure coding" }],
+    mcp: [{ id: "A.5.21", title: "ICT supply chain security" }, { id: "A.8.21", title: "Security of network services" }],
+    skills: [{ id: "A.8.19", title: "Software on operational systems" }],
+    agents: [{ id: "A.8.28", title: "Secure coding" }],
+    injection: [{ id: "A.8.28", title: "Secure coding" }],
+    exposure: [{ id: "A.8.12", title: "Data leakage prevention" }],
+    exfiltration: [{ id: "A.8.12", title: "Data leakage prevention" }],
+    misconfiguration: [{ id: "A.8.9", title: "Configuration management" }],
+    // Web-app code flaws map to ISO's secure coding control
+    webapp: [{ id: "A.8.28", title: "Secure coding" }, { id: "A.8.26", title: "Application security requirements" }]
+  }
+};
+var SEVERITY_RANK = {
+  critical: 0,
+  high: 1,
+  medium: 2,
+  low: 3,
+  info: 4
+};
+function emptySeverities() {
+  return { critical: 0, high: 0, medium: 0, low: 0, info: 0 };
+}
+function mapFindingsToControls(findings, framework) {
+  const table = CONTROL_MAP[framework];
+  const byControl = /* @__PURE__ */ new Map();
+  let mappedFindingCount = 0;
+  for (const finding of findings) {
+    const controls2 = table[finding.category] ?? [];
+    if (controls2.length > 0) mappedFindingCount += 1;
+    for (const control of controls2) {
+      const existing = byControl.get(control.id);
+      if (existing) {
+        existing.findingCount += 1;
+        existing.severities[finding.severity] += 1;
+        if (SEVERITY_RANK[finding.severity] < SEVERITY_RANK[existing.highestSeverity]) {
+          existing.highestSeverity = finding.severity;
+        }
+        if (existing.exampleFindings.length < 3 && !existing.exampleFindings.includes(finding.title)) {
+          existing.exampleFindings.push(finding.title);
+        }
+      } else {
+        const severities = emptySeverities();
+        severities[finding.severity] += 1;
+        byControl.set(control.id, {
+          framework,
+          controlId: control.id,
+          controlTitle: control.title,
+          findingCount: 1,
+          severities,
+          highestSeverity: finding.severity,
+          exampleFindings: [finding.title]
+        });
+      }
+    }
+  }
+  const controls = [...byControl.values()].sort(
+    (a, b) => SEVERITY_RANK[a.highestSeverity] - SEVERITY_RANK[b.highestSeverity] || b.findingCount - a.findingCount || a.controlId.localeCompare(b.controlId)
+  );
+  return {
+    framework,
+    frameworkName: FRAMEWORK_NAMES[framework],
+    totalFindings: findings.length,
+    mappedFindingCount,
+    unmappedFindingCount: findings.length - mappedFindingCount,
+    controls
+  };
+}
+function parseFrameworks(value) {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "all") return COMPLIANCE_FRAMEWORKS;
+  return normalized.split(",").map((v) => v.trim()).filter((v) => COMPLIANCE_FRAMEWORKS.includes(v));
+}
+function renderComplianceReport(report) {
+  const lines = [];
+  lines.push(`## Compliance Mapping: ${report.frameworkName}`);
+  lines.push("");
+  lines.push(
+    `Mapped ${report.mappedFindingCount}/${report.totalFindings} findings to ${report.controls.length} control(s). ${report.unmappedFindingCount} finding(s) had no mapped control.`
+  );
+  lines.push("");
+  if (report.controls.length === 0) {
+    lines.push("No findings mapped to controls for this framework.");
+    lines.push("");
+  } else {
+    lines.push("| Control | Title | Highest | Findings | Examples |");
+    lines.push("|---------|-------|---------|----------|----------|");
+    for (const control of report.controls) {
+      const examples = control.exampleFindings.join("; ") || "-";
+      lines.push(
+        `| ${control.controlId} | ${control.controlTitle} | ${control.highestSeverity} | ${control.findingCount} | ${examples} |`
+      );
+    }
+    lines.push("");
+  }
+  lines.push(
+    "_Category-level guidance mapping, not a certified crosswalk. Confirm control applicability with your auditor._"
+  );
+  lines.push("");
+  return lines.join("\n");
+}
+
+// src/reporter/dashboard.ts
+function ruleGroup(id) {
+  if (id.startsWith("webapp-")) return "web";
+  if (id.startsWith("defense-")) return "defense";
+  return "agent";
+}
+function safeJson(value) {
+  return JSON.stringify(value).replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
+}
+function renderDashboard(report, options = {}) {
+  const seen = /* @__PURE__ */ new Set();
+  const rules = [...getBuiltinRules(), ...options.extraRules ?? []].filter((rule) => seen.has(rule.id) ? false : (seen.add(rule.id), true)).map((rule) => ({
+    id: rule.id,
+    name: rule.name,
+    description: rule.description,
+    severity: rule.severity,
+    category: rule.category,
+    group: ruleGroup(rule.id)
+  }));
+  const compliance = COMPLIANCE_FRAMEWORKS.map(
+    (framework) => mapFindingsToControls(report.findings, framework)
+  );
+  const data = {
+    meta: {
+      tool: "CyberWarden",
+      version: options.version ?? "unknown",
+      target: report.targetPath,
+      project: basename8(report.targetPath) || report.targetPath,
+      timestamp: report.timestamp,
+      web: options.web === true,
+      // True when the scan found an AI coding setup (Claude Code, Cursor, MCP configs...) for the AI-setup checks to inspect.
+      agentSetup: (report.harnessAdapters?.totalMatched ?? 0) > 0
+    },
+    report: {
+      findings: report.findings,
+      score: report.score,
+      summary: report.summary,
+      defenses: report.defenses
+    },
+    rules,
+    compliance
+  };
+  return PAGE.replace("__TITLE__", () => escapeHtml2(`CyberWarden: ${data.meta.project} (Grade ${report.score.grade})`)).replace(
+    "__DATA__",
+    () => safeJson(data)
+  );
+}
+function escapeHtml2(text) {
+  return text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] ?? c);
+}
+var PAGE = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>__TITLE__</title>
+<style>
+:root{color-scheme:light;--bg:#f6f7f9;--card:#fff;--text:#14161a;--muted:#5f6672;--line:#e3e6eb;--soft:#eef0f4;--accent:#4f46e5;--accent-soft:#eef0ff;
+--crit:#c81e1e;--crit-bg:#fdecec;--high:#c2410c;--high-bg:#fff1e7;--med:#a16207;--med-bg:#fdf6dc;--low:#1d4ed8;--low-bg:#e8efff;--info:#4b5563;--info-bg:#eef0f3;--ok:#15803d;--ok-bg:#e7f6ec;--code:#f3f4f7}
+:root[data-theme=dark]{color-scheme:dark;--bg:#0d0f13;--card:#161a20;--text:#e8eaee;--muted:#9aa2ae;--line:#272c35;--soft:#1d222a;--accent:#8b85ff;--accent-soft:#23234a;
+--crit:#ff7676;--crit-bg:#3a1517;--high:#ff9a5c;--high-bg:#3a2113;--med:#f1c24b;--med-bg:#352c10;--low:#7ea6ff;--low-bg:#172340;--info:#aab2bd;--info-bg:#22272f;--ok:#5fd38a;--ok-bg:#12301e;--code:#1b2027}
+@media (prefers-color-scheme:dark){:root[data-theme=system]{color-scheme:dark;--bg:#0d0f13;--card:#161a20;--text:#e8eaee;--muted:#9aa2ae;--line:#272c35;--soft:#1d222a;--accent:#8b85ff;--accent-soft:#23234a;
+--crit:#ff7676;--crit-bg:#3a1517;--high:#ff9a5c;--high-bg:#3a2113;--med:#f1c24b;--med-bg:#352c10;--low:#7ea6ff;--low-bg:#172340;--info:#aab2bd;--info-bg:#22272f;--ok:#5fd38a;--ok-bg:#12301e;--code:#1b2027}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+header.top{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:12px;padding:12px 0;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;margin-right:auto;min-width:0}
+.brand small{display:block;font-weight:500;color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:46vw}
+.logo{width:30px;height:30px;border-radius:9px;background:var(--accent);display:grid;place-items:center;color:#fff;flex:none}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--card)}
+.seg button{border:0;background:none;padding:5px 12px;border-radius:999px;cursor:pointer;font-size:13px;color:var(--muted)}
+.seg button[aria-pressed=true]{background:var(--text);color:var(--bg)}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:7px 12px;cursor:pointer;font-size:13px}
+.btn:hover{border-color:var(--accent)}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;padding-bottom:10px;scrollbar-width:none}
+nav.tabs button{border:0;background:none;padding:8px 13px;border-radius:10px;cursor:pointer;white-space:nowrap;color:var(--muted);font-weight:600;font-size:14px}
+nav.tabs button[aria-selected=true]{background:var(--accent-soft);color:var(--accent)}
+nav.tabs .count{font-weight:500;opacity:.8;margin-left:4px}
+main{padding:22px 0 60px}
+h2{font-size:20px;margin:0 0 4px;letter-spacing:-.01em}
+h3{font-size:15px;margin:0 0 10px}
+.sub{color:var(--muted);margin:0 0 18px}
+.grid{display:grid;gap:14px}
+.g-hero{grid-template-columns:minmax(0,320px) minmax(0,1fr)}
+.g-sev{grid-template-columns:repeat(5,minmax(0,1fr))}
+.g-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;min-width:0}
+.grade{display:flex;align-items:center;gap:18px}
+.ring{width:112px;height:112px;border-radius:50%;display:grid;place-items:center;flex:none}
+.ring b{font-size:46px;line-height:1}
+.ring span{display:block;font-size:12px;color:var(--muted);text-align:center}
+.verdict{font-size:17px;font-weight:600;margin:0 0 6px}
+.sevcard{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--card);cursor:pointer;text-align:left}
+.sevcard:hover{border-color:var(--accent)}
+.sevcard b{display:block;font-size:26px;line-height:1.1}
+.sevcard span{font-size:13px;color:var(--muted)}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+.critical{color:var(--crit);background:var(--crit-bg)}.high{color:var(--high);background:var(--high-bg)}.medium{color:var(--med);background:var(--med-bg)}
+.low{color:var(--low);background:var(--low-bg)}.info{color:var(--info);background:var(--info-bg)}.passed{color:var(--ok);background:var(--ok-bg)}.na,.notrun{color:var(--muted);background:var(--soft)}
+.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:7px;background:var(--soft);color:var(--muted);margin:0 6px 6px 0;white-space:nowrap}
+.meter{height:8px;border-radius:99px;background:var(--soft);overflow:hidden}
+.meter i{display:block;height:100%;border-radius:99px}
+.row{display:flex;align-items:center;gap:10px}
+.between{justify-content:space-between}
+.list{display:grid;gap:10px}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+.toolbar input[type=search]{flex:1 1 220px;min-width:0;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.toolbar select{padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--card);max-width:100%}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 11px;cursor:pointer;font-size:13px}
+.chip[aria-pressed=true]{border-color:currentColor}
+details.finding{background:var(--card);border:1px solid var(--line);border-left-width:4px;border-radius:12px}
+details.finding[open]{box-shadow:0 2px 14px rgba(0,0,0,.06)}
+details.finding>summary{list-style:none;cursor:pointer;padding:13px 15px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center}
+details.finding>summary::-webkit-details-marker{display:none}
+.ftitle{font-weight:600;overflow-wrap:anywhere}
+.floc{font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted);overflow-wrap:anywhere}
+.chev{color:var(--muted);transition:transform .15s}
+details[open]>summary .chev{transform:rotate(90deg)}
+.fbody{padding:0 15px 15px;border-top:1px solid var(--line)}
+.fbody h4{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:16px 0 6px}
+pre{margin:0;background:var(--code);border:1px solid var(--line);border-radius:10px;padding:10px 12px;overflow-x:auto;font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+.fix{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.fix .lbl{font-size:12px;font-weight:700;margin-bottom:4px}
+.bad{color:var(--crit)}.good{color:var(--ok)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+td.mono,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;overflow-wrap:anywhere}
+.tablewrap{overflow-x:auto}
+.empty{text-align:center;padding:40px 16px;color:var(--muted)}
+.check{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.check input{width:18px;height:18px;margin-top:3px;accent-color:var(--accent);flex:none}
+.check.done .ftitle{text-decoration:line-through;color:var(--muted)}
+.note{border:1px dashed var(--line);border-radius:12px;padding:12px 14px;color:var(--muted);font-size:14px;background:var(--card)}
+.linkish{border:0;background:none;padding:0;color:var(--accent);cursor:pointer;text-decoration:underline;font-size:inherit}
+dl.kv{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 14px;margin:0;font-size:14px}
+dl.kv dt{color:var(--muted)}dl.kv dd{margin:0;overflow-wrap:anywhere}
+.hide{display:none!important}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:8px 14px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+@media (max-width:860px){.g-hero,.g-2,.g-3{grid-template-columns:minmax(0,1fr)}.g-sev{grid-template-columns:repeat(3,minmax(0,1fr))}.fix{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:640px){table.stack,table.stack tbody,table.stack tr,table.stack td{display:block;width:100%}table.stack thead{display:none}table.stack tr{padding:12px 4px;border-bottom:1px solid var(--line)}table.stack td{border:0;padding:3px 0}table.stack td.mono{color:var(--muted)}.bar{gap:8px}.brand{flex:1 1 100%}.brand small{max-width:80vw}.btn{padding:6px 10px}}
+@media (max-width:480px){.g-sev{grid-template-columns:repeat(2,minmax(0,1fr))}.ring{width:92px;height:92px}.ring b{font-size:38px}details.finding>summary{grid-template-columns:minmax(0,1fr) auto}details.finding>summary .badge{grid-column:1/-1;justify-self:start}}
+@media print{header.top{position:static}nav.tabs,.toolbar,.noprint{display:none!important}section.panel{display:block!important;page-break-after:always}details.finding{break-inside:avoid}body{background:#fff}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="bar">
+    <div class="brand"><div class="logo" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg></div>
+      <div>CyberWarden <small id="projline"></small></div></div>
+    <div class="seg noprint" role="group" aria-label="Theme"><button data-theme="system">System</button><button data-theme="dark">Dark</button><button data-theme="light">Light</button></div>
+    <button class="btn noprint" id="printBtn" title="Print or save as PDF">Save PDF</button>
+    <button class="btn noprint" id="jsonBtn" title="Download the raw report as JSON">JSON</button>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="Dashboard sections"></nav>
+</div></header>
+<main class="wrap" id="main"></main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script type="application/json" id="cw-data">__DATA__</script>
+<script>
+(function () {
+  "use strict";
+  // ---------- Data and plain-English explanations ----------
+  // The scan data embedded by CyberWarden.
+  var DATA = JSON.parse(document.getElementById("cw-data").textContent);
+  var R = DATA.report, META = DATA.meta;
+  // Most to least urgent.
+  var SEVS = ["critical", "high", "medium", "low", "info"];
+  var SEV_LABEL = { critical: "Critical", high: "High", medium: "Medium", low: "Low", info: "Info" };
+  var SEV_MEANING = {
+    critical: "Can be exploited right now and cause serious damage (stolen data, stolen money, full takeover). Fix before going live.",
+    high: "A real weakness an attacker could use. Fix soon, ideally before the next deploy.",
+    medium: "A weakness that needs other mistakes to be dangerous. Plan a fix.",
+    low: "Minor hardening. Fix when convenient.",
+    info: "Not a problem by itself: a note or good practice for awareness."
+  };
+  var GROUPS = { agent: "AI agent setup (AgentShield)", defense: "Defense-in-Depth (CyberWarden)", web: "Web app code (CyberWarden)" };
+  var CAT = {
+    secrets: ["Secrets", "API keys, passwords or tokens written where others can read them. Anyone who copies a key can spend your money or read your data."],
+    permissions: ["Permissions", "What your AI coding tools are allowed to do. Too much freedom lets a tricked AI delete files or run dangerous commands."],
+    hooks: ["Hooks", "Scripts that run automatically at set moments. A bad hook can quietly run harmful code or send data out every time it fires."],
+    mcp: ["MCP servers", "Tools plugged into your AI (Slack, GitHub, databases). Each one can see and do what you allow, so they must be trusted and limited."],
+    skills: ["Skills", "Instruction files your AI follows. A malicious skill can tell the AI to do harmful things."],
+    agents: ["Agents", "AI helper definitions. Unrestricted agents can use powerful tools you didn't mean to give them."],
+    injection: ["Prompt injection", "Hidden instructions inside content the AI reads (pages, files, tool results) that try to take control of it."],
+    exposure: ["Exposure", "Sensitive files or data reachable by people who shouldn't see them, like a served .env file or a default password."],
+    exfiltration: ["Data leaks", "Ways data could be sent out of your system, such as requests to unknown servers or tricking the server into fetching internal addresses (SSRF)."],
+    misconfiguration: ["Misconfiguration", "Settings that weaken security: disabled database protection, unpinned packages, unsafe uploads, unverified webhooks."],
+    webapp: ["Web app code", "Bugs in your site's own code: SQL injection, XSS, insecure cookies, missing rate limits, trusting prices from the browser and more."]
+  };
+  var GRADES = [["A", "90-100", "Strong. No serious problems found."], ["B", "75-89", "Good, with a few things to tidy up."], ["C", "60-74", "Fair. Real weaknesses to fix."], ["D", "40-59", "Poor. Serious problems: fix before deploying."], ["F", "0-39", "Failing. Critical problems: do not deploy."]];
+
+  // ---------- Small helpers ----------
+  // Create an element with attributes and children; text always goes in as text, never HTML.
+  function h(tag, attrs, kids) {
+    var el = document.createElement(tag);
+    if (attrs) for (var k in attrs) {
+      var v = attrs[k];
+      if (v === null || v === undefined || v === false) continue;
+      if (k === "class") el.className = v;
+      else if (k === "text") el.textContent = v;
+      else if (k.slice(0, 2) === "on") el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v === true ? "" : String(v));
+    }
+    (Array.isArray(kids) ? kids : kids === undefined ? [] : [kids]).forEach(function (c) {
+      if (c === null || c === undefined || c === false) return;
+      el.appendChild(typeof c === "string" || typeof c === "number" ? document.createTextNode(String(c)) : c);
+    });
+    return el;
+  }
+  // A coloured severity badge.
+  function sevBadge(s) { return h("span", { class: "badge " + s }, [h("span", { class: "dot" }), SEV_LABEL[s] || s]); }
+  // Plural helper: "1 problem" / "3 problems".
+  function plural(n, word) { return n + " " + word + (n === 1 ? "" : "s"); }
+  // Colour for a 0-100 score.
+  function scoreColor(n) { return n >= 90 ? "var(--ok)" : n >= 75 ? "var(--low)" : n >= 60 ? "var(--med)" : n >= 40 ? "var(--high)" : "var(--crit)"; }
+  // Show a short message at the bottom of the screen.
+  function toast(msg) { var t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(function () { t.classList.remove("show"); }, 1800); }
+  // Copy text to the clipboard, falling back quietly if the browser blocks it.
+  function copy(text) { try { navigator.clipboard.writeText(text).then(function () { toast("Copied"); }, function () { toast("Copy blocked by the browser"); }); } catch (e) { toast("Copy blocked by the browser"); } }
+  // Read and write browser storage without crashing in private windows.
+  function store(key, val) { try { if (val === undefined) return localStorage.getItem(key); localStorage.setItem(key, val); } catch (e) { return null; } }
+
+  // ---------- Link findings to the checks that produced them ----------
+  // Longest rule IDs first, so "webapp-xss-html-sink" wins over a shorter prefix.
+  var RULES = DATA.rules.slice().sort(function (a, b) { return b.id.length - a.id.length; });
+  var RULE_BY_ID = {};
+  DATA.rules.forEach(function (r) { RULE_BY_ID[r.id] = r; r.hits = 0; });
+  // Each finding gets its rule, family and a stable key.
+  var FINDINGS = R.findings.map(function (f, i) {
+    var rule = null;
+    for (var j = 0; j < RULES.length; j++) { var id = RULES[j].id; if (f.id === id || f.id.indexOf(id + "-") === 0) { rule = RULES[j]; break; } }
+    if (rule) rule.hits++;
+    var group = rule ? rule.group : (f.id.indexOf("webapp-") === 0 ? "web" : f.id.indexOf("defense-") === 0 ? "defense" : "agent");
+    return { f: f, i: i, rule: rule, group: group, key: f.id + "|" + f.file + "|" + (f.line || 0) };
+  }).sort(function (a, b) { return SEVS.indexOf(a.f.severity) - SEVS.indexOf(b.f.severity) || String(a.f.file).localeCompare(String(b.f.file)) || (a.f.line || 0) - (b.f.line || 0); });
+  // A check "ran" unless it's a web-app check and the scan didn't use --web.
+  function checkStatus(r) { if (r.group === "web" && !META.web) return "notrun"; if (r.hits > 0) return "failed"; if (r.group === "agent" && META.agentSetup === false) return "na"; return "passed"; }
+
+  // ---------- Theme switch (System / Dark / Light) ----------
+  function setTheme(t) {
+    document.documentElement.dataset.theme = t;
+    store("cw-theme", t);
+    document.querySelectorAll(".seg button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.theme === t)); });
+  }
+  document.querySelectorAll(".seg button").forEach(function (b) { b.addEventListener("click", function () { setTheme(b.dataset.theme); }); });
+  setTheme(store("cw-theme") || "system");
+
+  // ---------- Header buttons ----------
+  document.getElementById("projline").textContent = META.project + " \xB7 " + new Date(META.timestamp).toLocaleString();
+  document.getElementById("printBtn").addEventListener("click", function () { window.print(); });
+  document.getElementById("jsonBtn").addEventListener("click", function () {
+    var blob = new Blob([JSON.stringify(R, null, 2)], { type: "application/json" });
+    var a = h("a", { href: URL.createObjectURL(blob), download: "cyberwarden-" + META.project + ".json" });
+    document.body.appendChild(a); a.click(); a.remove();
+  });
+
+  // ---------- Shared filter state for the Findings tab ----------
+  var FILTER = { q: "", sev: {}, group: "all", cat: "all", file: "" };
+
+  // ---------- Tabs ----------
+  var checksRun = DATA.rules.filter(function (r) { var s = checkStatus(r); return s === "failed" || s === "passed"; }).length;
+  var TABS = [
+    { id: "overview", label: "Overview", render: renderOverview },
+    { id: "findings", label: "Findings", count: FINDINGS.length, render: renderFindings },
+    { id: "checks", label: "Security checks", count: checksRun, render: renderChecks },
+    { id: "plan", label: "Fix plan", render: renderPlan },
+    { id: "files", label: "Files", render: renderFiles },
+    { id: "compliance", label: "Compliance", render: renderCompliance },
+    { id: "learn", label: "Learn", render: renderLearn }
+  ];
+  var nav = document.querySelector("nav.tabs"), main = document.getElementById("main");
+  TABS.forEach(function (t) {
+    nav.appendChild(h("button", { role: "tab", id: "tab-" + t.id, "aria-controls": "panel-" + t.id, onclick: function () { show(t.id); } },
+      [t.label, t.count !== undefined ? h("span", { class: "count", text: "(" + t.count + ")" }) : null]));
+    main.appendChild(h("section", { class: "panel hide", id: "panel-" + t.id, role: "tabpanel", "aria-labelledby": "tab-" + t.id }));
+  });
+  // Switch to a tab, drawing its contents fresh.
+  function show(id) {
+    TABS.forEach(function (t) {
+      var on = t.id === id, panel = document.getElementById("panel-" + t.id);
+      document.getElementById("tab-" + t.id).setAttribute("aria-selected", String(on));
+      panel.classList.toggle("hide", !on);
+      if (on) { panel.textContent = ""; t.render(panel); }
+    });
+    if (location.hash !== "#" + id) history.replaceState(null, "", "#" + id);
+    window.scrollTo({ top: 0 });
+  }
+  // Jump to the Findings tab with some filters already set.
+  function openFindings(patch) {
+    FILTER = { q: "", sev: {}, group: "all", cat: "all", file: "" };
+    for (var k in patch) FILTER[k] = patch[k];
+    show("findings");
+  }
+
+  // ---------- Overview ----------
+  function renderOverview(p) {
+    var s = R.summary, sc = R.score;
+    var serious = s.critical + s.high;
+    var verdict = s.critical > 0 ? plural(s.critical, "critical problem") + " to fix before you deploy."
+      : s.high > 0 ? plural(s.high, "high-risk problem") + " to fix soon."
+      : s.totalFindings > 0 ? "No serious problems. " + plural(s.totalFindings, "smaller item") + " to review."
+      : "No problems found by the checks that ran.";
+    var col = scoreColor(sc.numericScore);
+    p.appendChild(h("h2", { text: "Security overview" }));
+    p.appendChild(h("p", { class: "sub", text: "What CyberWarden found in " + META.project + ", and what to do next." }));
+
+    // Grade and verdict.
+    var hero = h("div", { class: "grid g-hero" });
+    hero.appendChild(h("div", { class: "card grade" }, [
+      h("div", { class: "ring", style: "background:conic-gradient(" + col + " " + sc.numericScore + "%, var(--soft) 0)" },
+        h("div", { style: "width:84%;height:84%;border-radius:50%;background:var(--card);display:grid;place-items:center" },
+          h("div", null, [h("b", { style: "color:" + col, text: sc.grade }), h("span", { text: sc.numericScore + " / 100" })]))),
+      h("div", null, [h("p", { class: "verdict", text: verdict }),
+        h("p", { class: "sub", style: "margin:0", text: plural(s.totalFindings, "finding") + " across " + plural(s.filesScanned, "file") + ". " + checksRun + " security checks ran." })])
+    ]));
+    // Score per area.
+    var areas = h("div", { class: "card" }, [h("h3", { text: "Score by area" })]);
+    var bd = sc.breakdown || {};
+    var names = { secrets: "Secrets", permissions: "Permissions", hooks: "Hooks", mcp: "MCP servers", agents: "Agents", webapp: "Web app code" };
+    Object.keys(bd).forEach(function (k) {
+      var v = bd[k];
+      areas.appendChild(h("div", { style: "margin:10px 0" }, [
+        h("div", { class: "row between", style: "font-size:14px;margin-bottom:4px" }, [h("span", { text: names[k] || k }), h("b", { style: "color:" + scoreColor(v), text: v + "" })]),
+        h("div", { class: "meter" }, h("i", { style: "width:" + v + "%;background:" + scoreColor(v) }))
+      ]));
+    });
+    hero.appendChild(areas);
+    p.appendChild(hero);
+
+    // Severity counts (click to see them).
+    p.appendChild(h("h3", { style: "margin:22px 0 10px", text: "Findings by severity" }));
+    var sevs = h("div", { class: "grid g-sev" });
+    SEVS.forEach(function (sv) {
+      var o = {}; o[sv] = true;
+      sevs.appendChild(h("button", { class: "sevcard", title: SEV_MEANING[sv], onclick: function () { openFindings({ sev: o }); } },
+        [h("b", { class: sv, style: "background:none", text: String(s[sv] || 0) }), h("span", { text: SEV_LABEL[sv] })]));
+    });
+    p.appendChild(sevs);
+
+    // What to fix first.
+    var top = FINDINGS.filter(function (x) { return x.f.severity === "critical" || x.f.severity === "high"; }).slice(0, 5);
+    var two = h("div", { class: "grid g-2", style: "margin-top:14px" });
+    var first = h("div", { class: "card" }, [h("h3", { text: serious ? "Fix these first" : "Nothing urgent" })]);
+    if (!top.length) first.appendChild(h("p", { class: "sub", style: "margin:0", text: "No critical or high findings. Review the smaller items in the Findings tab." }));
+    top.forEach(function (x) {
+      first.appendChild(h("div", { class: "row", style: "margin:9px 0;align-items:flex-start" }, [sevBadge(x.f.severity),
+        h("div", { style: "min-width:0" }, [h("button", { class: "linkish", style: "text-align:left", text: x.f.title, onclick: function () { openFindings({ q: x.f.title }); } }),
+          h("div", { class: "floc", text: x.f.file + (x.f.line ? ":" + x.f.line : "") })])]));
+    });
+    two.appendChild(first);
+    // Scan details.
+    var groupsHit = {};
+    FINDINGS.forEach(function (x) { groupsHit[x.group] = (groupsHit[x.group] || 0) + 1; });
+    two.appendChild(h("div", { class: "card" }, [h("h3", { text: "Scan details" }), h("dl", { class: "kv" }, [
+      h("dt", { text: "Project" }), h("dd", { class: "mono", text: META.target }),
+      h("dt", { text: "Scanned" }), h("dd", { text: new Date(META.timestamp).toLocaleString() }),
+      h("dt", { text: "Tool" }), h("dd", { text: "CyberWarden " + META.version }),
+      h("dt", { text: "Web-app checks" }), h("dd", { text: META.web ? "On (--web)" : "Off. Add --web to scan your app's code." }),
+      h("dt", { text: "Files scanned" }), h("dd", { text: String(s.filesScanned) }),
+      h("dt", { text: "Auto-fixable" }), h("dd", { text: s.autoFixable ? s.autoFixable + " (run with --fix after reviewing)" : "0" }),
+      h("dt", { text: "By source" }), h("dd", { text: Object.keys(GROUPS).map(function (g) { return GROUPS[g].split(" (")[0] + ": " + (groupsHit[g] || 0); }).join(" \xB7 ") })
+    ])]));
+    p.appendChild(two);
+
+    // Protections already in place.
+    if (R.defenses && R.defenses.length) {
+      var d = h("div", { class: "card", style: "margin-top:14px" }, [h("h3", { text: "Protections already in place (" + R.defenses.length + ")" })]);
+      R.defenses.slice(0, 12).forEach(function (x) { d.appendChild(h("div", { class: "row", style: "margin:6px 0" }, [h("span", { class: "badge passed", text: "OK" }), h("span", { text: x.title || x.name || x.id || "Defense" }), h("span", { class: "floc", text: x.file || "" })])); });
+      p.appendChild(d);
+    }
+    p.appendChild(h("p", { class: "note", style: "margin-top:14px", text: "A scanner is a smoke alarm, not a fire brigade: it catches common, clear-cut mistakes fast, but a clean result means \\"no known patterns found\\", not \\"impossible to hack\\". Pair it with code review, testing and 2FA on your accounts." }));
+  }
+
+  // ---------- Findings ----------
+  function renderFindings(p) {
+    p.appendChild(h("h2", { text: "Findings" }));
+    p.appendChild(h("p", { class: "sub", text: "Every problem found, most urgent first. Open one to see why it matters and how to fix it." }));
+    var bar = h("div", { class: "toolbar" });
+    var q = h("input", { type: "search", placeholder: "Search titles, files, rule IDs\u2026", value: FILTER.q, "aria-label": "Search findings" });
+    bar.appendChild(q);
+    var chips = {};
+    SEVS.forEach(function (sv) {
+      var c = h("button", { class: "chip " + sv, "aria-pressed": String(!!FILTER.sev[sv]), text: SEV_LABEL[sv] + " " + (R.summary[sv] || 0) });
+      c.addEventListener("click", function () { FILTER.sev[sv] = !FILTER.sev[sv]; c.setAttribute("aria-pressed", String(FILTER.sev[sv])); draw(); });
+      chips[sv] = c; bar.appendChild(c);
+    });
+    var gsel = h("select", { "aria-label": "Source" }, [h("option", { value: "all", text: "All sources" })].concat(Object.keys(GROUPS).map(function (g) { return h("option", { value: g, text: GROUPS[g] }); })));
+    gsel.value = FILTER.group;
+    var cats = {}; FINDINGS.forEach(function (x) { cats[x.f.category] = 1; });
+    var csel = h("select", { "aria-label": "Category" }, [h("option", { value: "all", text: "All categories" })].concat(Object.keys(cats).sort().map(function (c) { return h("option", { value: c, text: (CAT[c] || [c])[0] }); })));
+    csel.value = FILTER.cat;
+    bar.appendChild(gsel); bar.appendChild(csel);
+    p.appendChild(bar);
+    var info = h("div", { class: "row between", style: "margin-bottom:10px;font-size:14px;color:var(--muted)" });
+    p.appendChild(info);
+    var list = h("div", { class: "list" });
+    p.appendChild(list);
+    q.addEventListener("input", function () { FILTER.q = q.value; draw(); });
+    gsel.addEventListener("change", function () { FILTER.group = gsel.value; draw(); });
+    csel.addEventListener("change", function () { FILTER.cat = csel.value; draw(); });
+    // Redraw the list whenever a filter changes.
+    function draw() {
+      var anySev = SEVS.some(function (s) { return FILTER.sev[s]; });
+      var needle = FILTER.q.trim().toLowerCase();
+      var shown = FINDINGS.filter(function (x) {
+        if (anySev && !FILTER.sev[x.f.severity]) return false;
+        if (FILTER.group !== "all" && x.group !== FILTER.group) return false;
+        if (FILTER.cat !== "all" && x.f.category !== FILTER.cat) return false;
+        if (FILTER.file && x.f.file !== FILTER.file) return false;
+        if (needle && (x.f.title + " " + x.f.file + " " + x.f.id + " " + x.f.description).toLowerCase().indexOf(needle) < 0) return false;
+        return true;
+      });
+      info.textContent = "";
+      info.appendChild(h("span", { text: "Showing " + shown.length + " of " + FINDINGS.length }));
+      if (FILTER.file || anySev || needle || FILTER.group !== "all" || FILTER.cat !== "all")
+        info.appendChild(h("button", { class: "linkish", text: "Clear filters", onclick: function () { openFindings({}); } }));
+      list.textContent = "";
+      if (!shown.length) { list.appendChild(h("div", { class: "empty", text: FINDINGS.length ? "No findings match these filters." : "No findings. Every check that ran passed." })); return; }
+      shown.slice(0, 400).forEach(function (x) { list.appendChild(findingCard(x)); });
+      if (shown.length > 400) list.appendChild(h("p", { class: "note", text: (shown.length - 400) + " more: narrow the filters to see them." }));
+    }
+    draw();
+  }
+  // One expandable finding.
+  function findingCard(x) {
+    var f = x.f, loc = f.file + (f.line ? ":" + f.line : "");
+    var body = h("div", { class: "fbody" });
+    body.appendChild(h("h4", { text: "Why it matters" }));
+    body.appendChild(h("p", { style: "margin:0", text: f.description }));
+    body.appendChild(h("h4", { text: "Where" }));
+    body.appendChild(h("div", { class: "row" }, [h("span", { class: "mono", text: loc }), h("button", { class: "linkish noprint", text: "Copy", onclick: function () { copy(loc); } })]));
+    if (f.evidence) { body.appendChild(h("h4", { text: "What was found" })); body.appendChild(h("pre", { text: f.evidence })); }
+    if (f.fix) {
+      body.appendChild(h("h4", { text: "How to fix" + (f.fix.auto ? " (auto-fixable)" : "") }));
+      body.appendChild(h("p", { style: "margin:0 0 8px", text: f.fix.description }));
+      if (f.fix.before || f.fix.after) body.appendChild(h("div", { class: "fix" }, [
+        f.fix.before ? h("div", null, [h("div", { class: "lbl bad", text: "Before (risky)" }), h("pre", { text: f.fix.before })]) : null,
+        f.fix.after ? h("div", null, [h("div", { class: "lbl good", text: "After (safer)" }), h("pre", { text: f.fix.after })]) : null
+      ]));
+    }
+    var cat = CAT[f.category];
+    if (cat) { body.appendChild(h("h4", { text: "About " + cat[0].toLowerCase() })); body.appendChild(h("p", { style: "margin:0;color:var(--muted)", text: cat[1] })); }
+    body.appendChild(h("h4", { text: "Details" }));
+    body.appendChild(h("div", null, [h("span", { class: "tag", text: "Rule: " + (x.rule ? x.rule.id : f.id) }), h("span", { class: "tag", text: GROUPS[x.group] }),
+      h("span", { class: "tag", text: "Category: " + (cat ? cat[0] : f.category) }), f.runtimeConfidence ? h("span", { class: "tag", text: "Confidence: " + f.runtimeConfidence }) : null]));
+    return h("details", { class: "finding", style: "border-left-color:var(--" + ({ critical: "crit", high: "high", medium: "med", low: "low", info: "info" }[f.severity]) + ")" }, [
+      h("summary", null, [sevBadge(f.severity), h("div", { style: "min-width:0" }, [h("div", { class: "ftitle", text: f.title }), h("div", { class: "floc", text: loc })]), h("span", { class: "chev", "aria-hidden": "true", text: "\u203A" })]),
+      body
+    ]);
+  }
+
+  // ---------- Security checks ----------
+  function renderChecks(p) {
+    var counts = { failed: 0, passed: 0, notrun: 0, na: 0 };
+    DATA.rules.forEach(function (r) { counts[checkStatus(r)]++; });
+    p.appendChild(h("h2", { text: "Security checks" }));
+    p.appendChild(h("p", { class: "sub", text: checksRun + " checks ran: " + counts.passed + " passed, " + counts.failed + " found problems." + (counts.na ? " " + counts.na + " AI-coding-setup checks are not applicable (no Claude Code, Cursor or MCP setup in this project)." : "") + (counts.notrun ? " " + counts.notrun + " web-app checks didn't run (scan with --web to include them)." : "") }));
+    var st = { status: "all", group: "all", q: "" };
+    var bar = h("div", { class: "toolbar" });
+    var q = h("input", { type: "search", placeholder: "Search checks\u2026", "aria-label": "Search checks" });
+    bar.appendChild(q);
+    var statusChips = [["all", "All"], ["failed", "Found problems " + counts.failed], ["passed", "Passed " + counts.passed], ["na", "Not applicable " + counts.na], ["notrun", "Not run " + counts.notrun]].map(function (s) {
+      var c = h("button", { class: "chip", "aria-pressed": String(s[0] === "all"), text: s[1] });
+      c.addEventListener("click", function () { st.status = s[0]; statusChips.forEach(function (b) { b.setAttribute("aria-pressed", "false"); }); c.setAttribute("aria-pressed", "true"); draw(); });
+      bar.appendChild(c); return c;
+    });
+    var gsel = h("select", { "aria-label": "Source" }, [h("option", { value: "all", text: "All sources" })].concat(Object.keys(GROUPS).map(function (g) { return h("option", { value: g, text: GROUPS[g] }); })));
+    bar.appendChild(gsel);
+    p.appendChild(bar);
+    var wrap = h("div", { class: "tablewrap card", style: "padding:6px 10px" });
+    p.appendChild(wrap);
+    q.addEventListener("input", function () { st.q = q.value.trim().toLowerCase(); draw(); });
+    gsel.addEventListener("change", function () { st.group = gsel.value; draw(); });
+    var order = { failed: 0, passed: 1, notrun: 2, na: 3 };
+    // Redraw the table.
+    function draw() {
+      var rows = DATA.rules.filter(function (r) {
+        var s = checkStatus(r);
+        if (st.status !== "all" && s !== st.status) return false;
+        if (st.group !== "all" && r.group !== st.group) return false;
+        if (st.q && (r.name + " " + r.id + " " + r.description).toLowerCase().indexOf(st.q) < 0) return false;
+        return true;
+      }).sort(function (a, b) { return order[checkStatus(a)] - order[checkStatus(b)] || SEVS.indexOf(a.severity) - SEVS.indexOf(b.severity) || a.name.localeCompare(b.name); });
+      wrap.textContent = "";
+      if (!rows.length) { wrap.appendChild(h("div", { class: "empty", text: "No checks match." })); return; }
+      var tb = h("tbody");
+      rows.slice(0, 600).forEach(function (r) {
+        var s = checkStatus(r);
+        tb.appendChild(h("tr", null, [
+          h("td", null, h("span", { class: "badge " + (s === "failed" ? r.severity : s), text: s === "failed" ? plural(r.hits, "finding") : s === "passed" ? "Passed" : s === "na" ? "Not applicable" : "Not run" })),
+          h("td", null, [h("div", { style: "font-weight:600", text: r.name }), h("div", { style: "color:var(--muted);font-size:13px", text: r.description })]),
+          h("td", { class: "mono", text: r.id }),
+          h("td", null, sevBadge(r.severity)),
+          h("td", { text: GROUPS[r.group].split(" (")[0] }),
+          h("td", null, s === "failed" ? h("button", { class: "linkish", text: "View", onclick: function () { openFindings({ q: r.id }); } }) : "")
+        ]));
+      });
+      wrap.appendChild(h("table", { class: "stack" }, [h("thead", null, h("tr", null, ["Result", "Check", "Rule ID", "Severity", "Source", ""].map(function (t) { return h("th", { text: t }); }))), tb]));
+    }
+    draw();
+  }
+
+  // ---------- Fix plan ----------
+  function renderPlan(p) {
+    var key = "cw-done:" + META.target + ":" + META.timestamp;
+    var done = {};
+    try { done = JSON.parse(store(key) || "{}"); } catch (e) { done = {}; }
+    p.appendChild(h("h2", { text: "Fix plan" }));
+    p.appendChild(h("p", { class: "sub", text: "Work top to bottom. Tick items as you fix them (saved in this browser only), then re-scan to confirm." }));
+    if (!FINDINGS.length) { p.appendChild(h("div", { class: "empty card", text: "Nothing to fix. Re-scan after every big change." })); return; }
+    var prog = h("div", { class: "card", style: "margin-bottom:14px" });
+    p.appendChild(prog);
+    // Update the progress bar.
+    function progress() {
+      var n = FINDINGS.filter(function (x) { return done[x.key]; }).length, pct = Math.round(n / FINDINGS.length * 100);
+      prog.textContent = "";
+      prog.appendChild(h("div", { class: "row between", style: "margin-bottom:8px" }, [h("b", { text: n + " of " + FINDINGS.length + " fixed" }), h("span", { text: pct + "%" })]));
+      prog.appendChild(h("div", { class: "meter" }, h("i", { style: "width:" + pct + "%;background:var(--ok)" })));
+    }
+    progress();
+    SEVS.forEach(function (sv) {
+      var items = FINDINGS.filter(function (x) { return x.f.severity === sv; });
+      if (!items.length) return;
+      p.appendChild(h("div", { class: "row", style: "margin:18px 0 8px" }, [sevBadge(sv), h("span", { style: "color:var(--muted);font-size:14px", text: SEV_MEANING[sv] })]));
+      var list = h("div", { class: "list" });
+      items.forEach(function (x) {
+        var box = h("input", { type: "checkbox", "aria-label": "Mark fixed: " + x.f.title });
+        box.checked = !!done[x.key];
+        var row = h("label", { class: "check" + (box.checked ? " done" : "") }, [box, h("div", { style: "min-width:0" }, [
+          h("div", { class: "ftitle", text: x.f.title }), h("div", { class: "floc", text: x.f.file + (x.f.line ? ":" + x.f.line : "") }),
+          x.f.fix ? h("div", { style: "font-size:14px;margin-top:4px", text: "Fix: " + x.f.fix.description }) : null])]);
+        box.addEventListener("change", function () { done[x.key] = box.checked; if (!box.checked) delete done[x.key]; row.classList.toggle("done", box.checked); store(key, JSON.stringify(done)); progress(); });
+        list.appendChild(row);
+      });
+      p.appendChild(list);
+    });
+    var cmd = "cyberwarden scan --path \\"" + META.target + "\\"" + (META.web ? " --web" : "") + " --format dashboard -o cyberwarden-report.html";
+    p.appendChild(h("div", { class: "card", style: "margin-top:18px" }, [h("h3", { text: "Re-scan after fixing" }), h("pre", { text: cmd }), h("button", { class: "btn noprint", style: "margin-top:8px", text: "Copy command", onclick: function () { copy(cmd); } })]));
+  }
+
+  // ---------- Files ----------
+  function renderFiles(p) {
+    var byFile = {};
+    FINDINGS.forEach(function (x) { var e = byFile[x.f.file] || (byFile[x.f.file] = { file: x.f.file, total: 0 }); e.total++; e[x.f.severity] = (e[x.f.severity] || 0) + 1; });
+    var rows = Object.keys(byFile).map(function (k) { return byFile[k]; }).sort(function (a, b) { return (b.critical || 0) - (a.critical || 0) || (b.high || 0) - (a.high || 0) || b.total - a.total; });
+    p.appendChild(h("h2", { text: "Files" }));
+    p.appendChild(h("p", { class: "sub", text: rows.length ? plural(rows.length, "file") + " with findings, riskiest first. " + R.summary.filesScanned + " files scanned in total." : "No file has findings." }));
+    if (!rows.length) return;
+    var tb = h("tbody");
+    rows.forEach(function (r) {
+      tb.appendChild(h("tr", null, [h("td", null, h("button", { class: "linkish mono", style: "text-align:left", text: r.file, onclick: function () { openFindings({ file: r.file }); } }))]
+        .concat(SEVS.map(function (s) { return h("td", null, r[s] ? h("span", { class: "badge " + s, text: String(r[s]) }) : h("span", { style: "color:var(--muted)", text: "\u2013" })); }))
+        .concat([h("td", { style: "font-weight:700", text: String(r.total) })])));
+    });
+    p.appendChild(h("div", { class: "tablewrap card", style: "padding:6px 10px" }, h("table", null, [h("thead", null, h("tr", null, ["File"].concat(SEVS.map(function (s) { return SEV_LABEL[s]; })).concat(["Total"]).map(function (t) { return h("th", { text: t }); }))), tb])));
+  }
+
+  // ---------- Compliance ----------
+  function renderCompliance(p) {
+    p.appendChild(h("h2", { text: "Compliance" }));
+    p.appendChild(h("p", { class: "sub", text: "Which audit controls your findings touch, for clients who ask about SOC 2, PCI DSS (card payments) or ISO 27001." }));
+    var g = h("div", { class: "grid g-3" });
+    DATA.compliance.forEach(function (fw) {
+      var c = h("div", { class: "card" }, [h("h3", { text: fw.frameworkName }), h("p", { class: "sub", style: "margin:0 0 10px", text: fw.controls.length ? plural(fw.controls.length, "control") + " affected by " + plural(fw.mappedFindingCount, "finding") : "No controls affected." })]);
+      fw.controls.forEach(function (ctl) {
+        c.appendChild(h("div", { style: "border-top:1px solid var(--line);padding:9px 0" }, [
+          h("div", { class: "row between" }, [h("b", { class: "mono", text: ctl.controlId }), sevBadge(ctl.highestSeverity)]),
+          h("div", { style: "font-size:14px", text: ctl.controlTitle }),
+          h("div", { style: "font-size:13px;color:var(--muted)", text: plural(ctl.findingCount, "finding") + (ctl.exampleFindings.length ? " \xB7 e.g. " + ctl.exampleFindings[0] : "") })]));
+      });
+      g.appendChild(c);
+    });
+    p.appendChild(g);
+    p.appendChild(h("p", { class: "note", style: "margin-top:14px", text: "This mapping is security guidance by finding category, not a certified audit. Nigeria's NDPA 2023 privacy issues (BVN, NIN and other personal data) appear as findings under Data leaks and Exposure." }));
+  }
+
+  // ---------- Learn ----------
+  function renderLearn(p) {
+    p.appendChild(h("h2", { text: "Learn" }));
+    p.appendChild(h("p", { class: "sub", text: "What the words and colours in this report mean." }));
+    var sev = h("div", { class: "card" }, [h("h3", { text: "Severity levels" })]);
+    SEVS.forEach(function (s) { sev.appendChild(h("div", { class: "row", style: "margin:9px 0;align-items:flex-start" }, [h("div", { style: "width:92px;flex:none" }, sevBadge(s)), h("span", { text: SEV_MEANING[s] })])); });
+    var gr = h("div", { class: "card" }, [h("h3", { text: "Grades" })]);
+    GRADES.forEach(function (x) { gr.appendChild(h("div", { class: "row", style: "margin:9px 0" }, [h("b", { style: "width:22px", text: x[0] }), h("span", { class: "mono", style: "width:64px;color:var(--muted)", text: x[1] }), h("span", { text: x[2] })])); });
+    p.appendChild(h("div", { class: "grid g-2" }, [sev, gr]));
+    var cats = h("div", { class: "card", style: "margin-top:14px" }, [h("h3", { text: "What each category means" })]);
+    Object.keys(CAT).forEach(function (k) { cats.appendChild(h("div", { style: "border-top:1px solid var(--line);padding:10px 0" }, [h("b", { text: CAT[k][0] }), h("div", { style: "color:var(--muted)", text: CAT[k][1] })])); });
+    p.appendChild(cats);
+    var src = h("div", { class: "card", style: "margin-top:14px" }, [h("h3", { text: "Where the checks come from" })]);
+    [["agent", "Checks your AI coding setup (Claude Code and similar): secrets, permissions, hooks, MCP servers, skills and prompt-injection risks. From AgentShield by Affaan M (MIT licence)."],
+     ["defense", "CyberWarden's extra layer: database Row-Level Security, SSRF, unsafe uploads, double-spend race conditions, unpinned packages, Paystack/Flutterwave/WhatsApp webhooks, chatbot history, NDPA personal data, mass assignment, exposed dotfiles and OTP safety."],
+     ["web", "CyberWarden's checks on your site's own code (scan with --web): SQL injection, XSS, secrets in code or git, weak passwords and tokens, cookies, CORS, CSP, headers, rate limits, webhooks, open redirects, file paths, error leaks, payments and AI prompt safety."]]
+      .forEach(function (x) { src.appendChild(h("div", { style: "border-top:1px solid var(--line);padding:10px 0" }, [h("b", { text: GROUPS[x[0]] }), h("div", { style: "color:var(--muted)", text: x[1] })])); });
+    p.appendChild(src);
+  }
+
+  // ---------- Start ----------
+  var start = (location.hash || "").slice(1);
+  show(TABS.some(function (t) { return t.id === start; }) ? start : "overview");
+})();
+</script>
+</body>
+</html>
+`;
+
 // src/reporter/sarif.ts
 var SARIF_SCHEMA = "https://json.schemastore.org/sarif-2.1.0.json";
 function renderSarifReport(report, options = {}) {
@@ -24446,7 +24969,7 @@ function normalizeUri(uri) {
 init_remediation();
 import { createHash as createHash2 } from "crypto";
 import { existsSync as existsSync4, mkdirSync as mkdirSync2, readFileSync as readFileSync4, writeFileSync as writeFileSync2 } from "fs";
-import { basename as basename8, join as join5, resolve as resolve3 } from "path";
+import { basename as basename9, join as join5, resolve as resolve3 } from "path";
 import { homedir as homedir3 } from "os";
 var ARTIFACTS = [
   {
@@ -25346,7 +25869,7 @@ function buildReplacements(targetPath) {
   ] : [];
   const homeReplacements = home && home !== "/" ? pathPatterns(home).map((pattern) => [pattern, "<home>"]) : [];
   const userNames = [
-    basename8(home),
+    basename9(home),
     process.env.USER,
     process.env.USERNAME
   ].filter((value) => Boolean(value && value.length >= 3));
@@ -26417,146 +26940,6 @@ function renderFixVerification(verification) {
     );
   }
   lines.push(`  Attestation: ${verification.attestation.digest}`);
-  lines.push("");
-  return lines.join("\n");
-}
-
-// src/compliance/index.ts
-var COMPLIANCE_FRAMEWORKS = ["soc2", "pci", "iso"];
-var FRAMEWORK_NAMES = {
-  soc2: "SOC 2 (Trust Services Criteria)",
-  pci: "PCI DSS v4.0",
-  iso: "ISO/IEC 27001:2022 Annex A"
-};
-var CONTROL_MAP = {
-  soc2: {
-    secrets: [{ id: "CC6.1", title: "Logical access - credentials" }, { id: "CC6.3", title: "Access credentials managed" }],
-    permissions: [{ id: "CC6.1", title: "Logical access security" }, { id: "CC6.3", title: "Least-privilege access" }],
-    hooks: [{ id: "CC7.1", title: "Detection of security events" }, { id: "CC8.1", title: "Change management" }],
-    mcp: [{ id: "CC6.6", title: "External access boundaries" }, { id: "CC6.1", title: "Logical access security" }],
-    skills: [{ id: "CC8.1", title: "Unauthorized/changed software" }],
-    agents: [{ id: "CC6.1", title: "Logical access security" }, { id: "CC7.1", title: "Detection of security events" }],
-    injection: [{ id: "CC7.1", title: "Detection of security events" }, { id: "CC8.1", title: "Change management" }],
-    exposure: [{ id: "CC6.1", title: "Logical access security" }],
-    exfiltration: [{ id: "CC6.7", title: "Restricted data transmission" }],
-    misconfiguration: [{ id: "CC7.1", title: "Detection of security events" }],
-    // Web-app code flaws map to secure system development and logical access controls
-    webapp: [{ id: "CC8.1", title: "Change management" }, { id: "CC6.1", title: "Logical access security" }]
-  },
-  pci: {
-    secrets: [{ id: "Req 3", title: "Protect stored account data" }, { id: "Req 8", title: "Identify and authenticate access" }],
-    permissions: [{ id: "Req 7", title: "Restrict access by need-to-know" }],
-    hooks: [{ id: "Req 6", title: "Secure systems and software" }, { id: "Req 10", title: "Log and monitor access" }],
-    mcp: [{ id: "Req 1", title: "Network security controls" }, { id: "Req 6", title: "Secure systems and software" }],
-    skills: [{ id: "Req 6", title: "Secure systems and software" }, { id: "Req 2", title: "Secure configurations" }],
-    agents: [{ id: "Req 6", title: "Secure systems and software" }],
-    injection: [{ id: "Req 6.2", title: "Secure software development" }],
-    exposure: [{ id: "Req 3", title: "Protect stored account data" }],
-    exfiltration: [{ id: "Req 4", title: "Protect data in transmission" }, { id: "Req 1", title: "Network security controls" }],
-    misconfiguration: [{ id: "Req 2", title: "Secure configurations" }],
-    // Web-app code flaws map to PCI's secure software development requirements
-    webapp: [{ id: "Req 6.2", title: "Secure software development" }, { id: "Req 6.4", title: "Public-facing web apps protected" }]
-  },
-  iso: {
-    secrets: [{ id: "A.5.17", title: "Authentication information" }, { id: "A.8.24", title: "Use of cryptography" }],
-    permissions: [{ id: "A.5.15", title: "Access control" }, { id: "A.8.2", title: "Privileged access rights" }],
-    hooks: [{ id: "A.8.16", title: "Monitoring activities" }, { id: "A.8.28", title: "Secure coding" }],
-    mcp: [{ id: "A.5.21", title: "ICT supply chain security" }, { id: "A.8.21", title: "Security of network services" }],
-    skills: [{ id: "A.8.19", title: "Software on operational systems" }],
-    agents: [{ id: "A.8.28", title: "Secure coding" }],
-    injection: [{ id: "A.8.28", title: "Secure coding" }],
-    exposure: [{ id: "A.8.12", title: "Data leakage prevention" }],
-    exfiltration: [{ id: "A.8.12", title: "Data leakage prevention" }],
-    misconfiguration: [{ id: "A.8.9", title: "Configuration management" }],
-    // Web-app code flaws map to ISO's secure coding control
-    webapp: [{ id: "A.8.28", title: "Secure coding" }, { id: "A.8.26", title: "Application security requirements" }]
-  }
-};
-var SEVERITY_RANK2 = {
-  critical: 0,
-  high: 1,
-  medium: 2,
-  low: 3,
-  info: 4
-};
-function emptySeverities() {
-  return { critical: 0, high: 0, medium: 0, low: 0, info: 0 };
-}
-function mapFindingsToControls(findings, framework) {
-  const table = CONTROL_MAP[framework];
-  const byControl = /* @__PURE__ */ new Map();
-  let mappedFindingCount = 0;
-  for (const finding of findings) {
-    const controls2 = table[finding.category] ?? [];
-    if (controls2.length > 0) mappedFindingCount += 1;
-    for (const control of controls2) {
-      const existing = byControl.get(control.id);
-      if (existing) {
-        existing.findingCount += 1;
-        existing.severities[finding.severity] += 1;
-        if (SEVERITY_RANK2[finding.severity] < SEVERITY_RANK2[existing.highestSeverity]) {
-          existing.highestSeverity = finding.severity;
-        }
-        if (existing.exampleFindings.length < 3 && !existing.exampleFindings.includes(finding.title)) {
-          existing.exampleFindings.push(finding.title);
-        }
-      } else {
-        const severities = emptySeverities();
-        severities[finding.severity] += 1;
-        byControl.set(control.id, {
-          framework,
-          controlId: control.id,
-          controlTitle: control.title,
-          findingCount: 1,
-          severities,
-          highestSeverity: finding.severity,
-          exampleFindings: [finding.title]
-        });
-      }
-    }
-  }
-  const controls = [...byControl.values()].sort(
-    (a, b) => SEVERITY_RANK2[a.highestSeverity] - SEVERITY_RANK2[b.highestSeverity] || b.findingCount - a.findingCount || a.controlId.localeCompare(b.controlId)
-  );
-  return {
-    framework,
-    frameworkName: FRAMEWORK_NAMES[framework],
-    totalFindings: findings.length,
-    mappedFindingCount,
-    unmappedFindingCount: findings.length - mappedFindingCount,
-    controls
-  };
-}
-function parseFrameworks(value) {
-  const normalized = value.trim().toLowerCase();
-  if (normalized === "all") return COMPLIANCE_FRAMEWORKS;
-  return normalized.split(",").map((v) => v.trim()).filter((v) => COMPLIANCE_FRAMEWORKS.includes(v));
-}
-function renderComplianceReport(report) {
-  const lines = [];
-  lines.push(`## Compliance Mapping: ${report.frameworkName}`);
-  lines.push("");
-  lines.push(
-    `Mapped ${report.mappedFindingCount}/${report.totalFindings} findings to ${report.controls.length} control(s). ${report.unmappedFindingCount} finding(s) had no mapped control.`
-  );
-  lines.push("");
-  if (report.controls.length === 0) {
-    lines.push("No findings mapped to controls for this framework.");
-    lines.push("");
-  } else {
-    lines.push("| Control | Title | Highest | Findings | Examples |");
-    lines.push("|---------|-------|---------|----------|----------|");
-    for (const control of report.controls) {
-      const examples = control.exampleFindings.join("; ") || "-";
-      lines.push(
-        `| ${control.controlId} | ${control.controlTitle} | ${control.highestSeverity} | ${control.findingCount} | ${examples} |`
-      );
-    }
-    lines.push("");
-  }
-  lines.push(
-    "_Category-level guidance mapping, not a certified crosswalk. Confirm control applicability with your auditor._"
-  );
   lines.push("");
   return lines.join("\n");
 }
@@ -28201,7 +28584,7 @@ function emptySupplyChainReport() {
     }
   };
 }
-program.command("scan").description("Scan a Claude Code configuration directory for security issues").option("-p, --path <path>", "Path to scan (default: ~/.claude or current dir)").option("--web", "Also scan web-app code for common security bugs (CyberWarden)", false).option("-f, --format <format>", "Output format: terminal, json, markdown, html, sarif", "terminal").option("-o, --output <path>", "Write the primary report output to a file").option("--fix", "Auto-apply safe fixes", false).option("--opus", "Enable Claude Opus multi-agent deep analysis", false).option("--provider <provider>", "LLM provider for --opus/--injection analysis: anthropic (default) or orcarouter", "anthropic").option("--stream", "Stream Opus analysis in real-time", false).option("--injection", "Run active prompt injection testing against the config", false).option("--sandbox", "Execute hooks in sandbox and observe behavior", false).option("--taint", "Run taint analysis (data flow tracking)", false).option("--deep", "Run ALL analysis (injection + sandbox + taint + opus)", false).option("--log <path>", "Write structured scan log to file").option("--log-format <format>", "Log format: ndjson (default) or json", "ndjson").option("--corpus", "Run scanner validation against built-in attack corpus", false).option("--corpus-gate", "Run built-in attack corpus and fail if scanner accuracy regresses", false).option("--baseline <path>", "Compare against a baseline file and report regressions").option("--save-baseline <path>", "Save current scan results as a baseline file").option("--gate", "Fail if new critical/high findings or score drops (use with --baseline)", false).option("--supply-chain", "Verify MCP npm packages against known-bad list and typosquatting", false).option("--supply-chain-online", "Also query npm registry for metadata (requires network)", false).option("--compliance <frameworks>", "Map findings to control IDs: soc2, pci, iso, all (comma-separated)").option(
+program.command("scan").description("Scan a Claude Code configuration directory for security issues").option("-p, --path <path>", "Path to scan (default: ~/.claude or current dir)").option("--web", "Also scan web-app code for common security bugs (CyberWarden)", false).option("-f, --format <format>", "Output format: terminal, json, markdown, html, dashboard, sarif", "terminal").option("-o, --output <path>", "Write the primary report output to a file").option("--fix", "Auto-apply safe fixes", false).option("--opus", "Enable Claude Opus multi-agent deep analysis", false).option("--provider <provider>", "LLM provider for --opus/--injection analysis: anthropic (default) or orcarouter", "anthropic").option("--stream", "Stream Opus analysis in real-time", false).option("--injection", "Run active prompt injection testing against the config", false).option("--sandbox", "Execute hooks in sandbox and observe behavior", false).option("--taint", "Run taint analysis (data flow tracking)", false).option("--deep", "Run ALL analysis (injection + sandbox + taint + opus)", false).option("--log <path>", "Write structured scan log to file").option("--log-format <format>", "Log format: ndjson (default) or json", "ndjson").option("--corpus", "Run scanner validation against built-in attack corpus", false).option("--corpus-gate", "Run built-in attack corpus and fail if scanner accuracy regresses", false).option("--baseline <path>", "Compare against a baseline file and report regressions").option("--save-baseline <path>", "Save current scan results as a baseline file").option("--gate", "Fail if new critical/high findings or score drops (use with --baseline)", false).option("--supply-chain", "Verify MCP npm packages against known-bad list and typosquatting", false).option("--supply-chain-online", "Also query npm registry for metadata (requires network)", false).option("--compliance <frameworks>", "Map findings to control IDs: soc2, pci, iso, all (comma-separated)").option(
   "--rule-pack <path>",
   "Load an external JSON rule pack and run it alongside built-in rules (repeatable)",
   (value, previous) => [...previous, value],
@@ -28318,6 +28701,14 @@ program.command("scan").description("Scan a Claude Code configuration directory 
       break;
     case "html":
       renderedReport = renderHtmlReport(report);
+      break;
+    // CyberWarden: the interactive dashboard (one offline HTML file with every finding, check and fix)
+    case "dashboard":
+      renderedReport = renderDashboard(report, {
+        web: options.web === true,
+        version: program.version() ?? "unknown",
+        extraRules
+      });
       break;
     case "sarif":
       renderedReport = renderSarifReport(report, {
@@ -28960,7 +29351,7 @@ policyCmd.command("init").description("Generate an example organization policy f
   Example policy written to: ${outputPath}`);
   console.log(`  Policy pack: ${packResult.data}`);
   console.log(`  Edit the file to match your organization's requirements.`);
-  console.log(`  Then run: agentshield scan --policy ${options.output}
+  console.log(`  Then run: cyberwarden scan --policy ${options.output}
 `);
 });
 policyCmd.command("export").description("Export policy pack JSON files with a checksum manifest").option("-o, --output-dir <path>", "Output directory", ".agentshield/policies").option("--pack <pack>", "Policy pack to export; repeat for multiple packs", collectOption, []).option("--owner <owner>", "Policy owner identifier; repeat for multiple owners", collectOption, []).option("--name-prefix <prefix>", "Prefix generated policy names").option("--json", "Emit the export manifest as JSON", false).action(async (options) => {
@@ -29000,7 +29391,7 @@ policyCmd.command("export").description("Export policy pack JSON files with a ch
     console.log(`  - ${pack.id}: ${pack.file} (${pack.sha256})`);
   }
   if (manifest.packs[0]) {
-    console.log(`  Then run: agentshield scan --policy ${join13(options.outputDir, manifest.packs[0].file)}
+    console.log(`  Then run: cyberwarden scan --policy ${join13(options.outputDir, manifest.packs[0].file)}
 `);
   } else {
     console.log("");
