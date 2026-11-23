@@ -1,6 +1,6 @@
-name: "AgentShield Security Scan"
-description: "Scan Claude Code configurations for security issues"
-author: "affaan-m"
+name: "CyberWarden Security Scan"
+description: "Scan AI agent configs and web apps for security vulnerabilities"
+author: "ijioku"
 
 branding:
   icon: "shield"
