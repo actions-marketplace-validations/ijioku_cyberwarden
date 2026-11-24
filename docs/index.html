@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Text encoding -->
+<meta charset="utf-8">
+<!-- Fit phone screens -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Only allow this site's own files, Google Fonts, and inline styles; no outside scripts -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; base-uri 'self'; form-action 'none'">
+<!-- Don't send the full page address to other sites when someone clicks a link -->
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<!-- Browser tab name -->
+<title>CyberWarden Live Demo</title>
+<!-- Search and link-preview text -->
+<meta name="description" content="See CyberWarden's real security reports: a deliberately broken online shop scores Grade D with 23 problems; the same shop, fixed, scores Grade A.">
+<!-- The main address of this page, for search engines -->
+<link rel="canonical" href="https://ijioku.github.io/cyberwarden/">
+<!-- Link preview details for WhatsApp, LinkedIn and others -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="CyberWarden Live Demo">
+<meta property="og:description" content="A broken shop scores Grade D with 23 security problems. The same shop, fixed, scores Grade A. Open the real reports.">
+<meta property="og:url" content="https://ijioku.github.io/cyberwarden/">
+<!-- Fonts: Space Grotesk for headings, Inter for text, JetBrains Mono for labels -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a short hero, then a before/after pair of report cards that a scanner beam sweeps over once, then links to learn more. */
+/* Light colours and fonts (each colour defined here first) */
+:root{--bg:#f4f5f9;--card:#ffffff;--fg:#141824;--muted:#5a6275;--line:#e1e4ec;--accent:#4f46e5;--accent-soft:#ecebff;--agent:#0f766e;--bad:#c2410c;--bad-soft:#fdeee4;--good:#0f766e;--good-soft:#e3f4f1;--crit:#b91c1c;--high:#c2410c;--med:#a16207;--beam:rgba(15,118,110,.55);
+--display:"Space Grotesk",system-ui,sans-serif;--body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"JetBrains Mono",ui-monospace,Consolas,monospace}
+/* Dark colours when the device is dark and the visitor hasn't picked Light */
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1118;--card:#161b26;--fg:#e8ebf2;--muted:#9aa3b5;--line:#262d3b;--accent:#8f88ff;--accent-soft:#23234a;--agent:#3fc9b8;--bad:#fb923c;--bad-soft:#3a2010;--good:#3fc9b8;--good-soft:#10302d;--crit:#f87171;--high:#fb923c;--med:#facc15;--beam:rgba(63,201,184,.6);color-scheme:dark}}
+/* The same dark colours when the visitor picks Dark */
+:root[data-theme="dark"]{--bg:#0e1118;--card:#161b26;--fg:#e8ebf2;--muted:#9aa3b5;--line:#262d3b;--accent:#8f88ff;--accent-soft:#23234a;--agent:#3fc9b8;--bad:#fb923c;--bad-soft:#3a2010;--good:#3fc9b8;--good-soft:#10302d;--crit:#f87171;--high:#fb923c;--med:#facc15;--beam:rgba(63,201,184,.6);color-scheme:dark}
+/* Widths include padding */
+*{box-sizing:border-box}
+/* Page background, text and base font */
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 var(--body)}
+/* Centred column with safe side gutters */
+.wrap{max-width:980px;margin:0 auto;padding-block:32px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:44px}
+/* Heading font */
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;letter-spacing:-.015em}
+/* Main title */
+h1{font-size:clamp(32px,6vw,52px);line-height:1.05}
+/* Section titles */
+h2{font-size:24px}
+/* Card titles */
+h3{font-size:19px}
+/* Paragraph width */
+p{margin:0;max-width:66ch}
+/* Intro text */
+.lede{font-size:18px;color:var(--muted)}
+/* Top bar: name on the left, theme switch on the right */
+.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px}
+/* Small uppercase label */
+.eyebrow{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+/* System / Dark / Light switch */
+.theme{display:inline-flex;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:3px}
+/* One switch button */
+.theme button{border:0;background:none;color:var(--muted);font:600 13px var(--body);padding:6px 12px;border-radius:999px;cursor:pointer}
+/* Selected switch button */
+.theme button[aria-pressed="true"]{background:var(--accent);color:var(--card)}
+/* Hero block */
+.hero{display:grid;gap:14px}
+/* The before/after area the beam sweeps over */
+.scan{position:relative;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+/* One report card */
+.report{background:var(--card);border:1px solid var(--line);border-top:5px solid var(--c);border-radius:16px;padding:22px;display:grid;gap:14px;align-content:start;min-width:0;transition:transform .2s ease,box-shadow .3s ease}
+/* Lift the card a little on hover */
+.report:hover{transform:translateY(-3px);box-shadow:0 14px 34px -16px rgba(20,24,36,.35)}
+/* Glow while the beam passes */
+.report.lit{box-shadow:0 0 0 3px var(--soft),0 14px 34px -16px var(--c)}
+/* Grade letter and score side by side */
+.gradeRow{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+/* The big grade letter */
+.grade{font:700 64px/1 var(--display);color:var(--c)}
+/* The score out of 100 */
+.score{font:500 15px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+/* The score number itself */
+.score b{font-size:22px;color:var(--fg)}
+/* Severity count chips */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+/* One chip */
+.chip{font:600 13px var(--body);padding:4px 10px;border-radius:999px;border:1px solid var(--line);font-variant-numeric:tabular-nums}
+/* Chip colours per severity */
+.chip.c{color:var(--crit)}
+.chip.h{color:var(--high)}
+.chip.m{color:var(--med)}
+.chip.ok{color:var(--good)}
+/* Example list inside a card */
+.report ul{margin:0;padding-left:18px;color:var(--muted);font-size:15px;display:grid;gap:4px}
+/* Main button */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--c);color:var(--card);font:600 15px var(--body);text-decoration:none;padding:12px 18px;border-radius:12px;transition:transform .15s ease,filter .15s ease}
+/* Button hover */
+.btn:hover{filter:brightness(1.08)}
+/* Button press */
+.btn:active{transform:scale(.97)}
+/* Keyboard focus ring for buttons, links and switch */
+a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+/* The scanner beam line */
+.beam{position:absolute;left:-6px;right:-6px;top:0;height:3px;border-radius:3px;background:var(--beam);box-shadow:0 0 18px 4px var(--beam);opacity:0;pointer-events:none}
+/* While scanning, move the beam down once */
+.scan.sweeping .beam{animation:sweep 1.8s cubic-bezier(.45,.05,.35,1) forwards}
+/* Fade in, travel down, fade out */
+@keyframes sweep{0%{top:0;opacity:0}10%{opacity:1}90%{opacity:1}100%{top:100%;opacity:0}}
+/* Grid of "learn more" links */
+.links{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+/* One learn-more link card */
+.link{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;color:var(--fg);text-decoration:none;display:grid;gap:4px;transition:border-color .2s ease,transform .2s ease}
+/* Highlight a link card on hover */
+.link:hover{border-color:var(--accent);transform:translateY(-2px)}
+/* The link card's small description */
+.link span{color:var(--muted);font-size:14px}
+/* Note under the cards */
+.note{color:var(--muted);font-size:14px}
+/* Footer text */
+footer{color:var(--muted);font-size:14px}
+/* Footer links */
+footer a,.note a{color:var(--accent)}
+/* No animation for people who ask for less motion */
+@media (prefers-reduced-motion:reduce){.scan.sweeping .beam{animation:none}.report,.btn,.link{transition:none}.report:hover,.link:hover{transform:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- Top bar with the theme switch -->
+  <div class="top">
+    <span class="eyebrow">CyberWarden · live demo</span>
+    <div class="theme" role="group" aria-label="Colour theme">
+      <button type="button" id="theme-system" data-set="system" aria-pressed="true">System</button>
+      <button type="button" id="theme-dark" data-set="dark" aria-pressed="false">Dark</button>
+      <button type="button" id="theme-light" data-set="light" aria-pressed="false">Light</button>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <header class="hero">
+    <h1>One shop, scanned twice</h1>
+    <p class="lede">CyberWarden is a free security scanner for websites and AI coding setups. Below are its real reports on a small online shop: first with the mistakes a rushed developer (or an AI) often makes, then after fixing them.</p>
+  </header>
+
+  <!-- Before and after reports -->
+  <section class="scan" id="scan" aria-label="Before and after reports">
+    <div class="beam" aria-hidden="true"></div>
+    <article class="report" style="--c:var(--bad);--soft:var(--bad-soft)">
+      <h3>Before: the broken shop</h3>
+      <div class="gradeRow"><span class="grade">D</span><span class="score"><b data-count="50">50</b> / 100</span></div>
+      <div class="chips">
+        <span class="chip c">4 critical</span>
+        <span class="chip h">10 high</span>
+        <span class="chip m">9 medium</span>
+      </div>
+      <ul>
+        <li>SQL injection on the product page</li>
+        <li>Passwords stored with a fast, crackable hash</li>
+        <li>Payment amount and "paid" status taken from the browser</li>
+        <li>A secret key visible in the page source</li>
+      </ul>
+      <a class="btn" href="demo/vulnerable-shop.html">Open the Grade D report</a>
+    </article>
+    <article class="report" style="--c:var(--good);--soft:var(--good-soft)">
+      <h3>After: the same shop, fixed</h3>
+      <div class="gradeRow"><span class="grade">A</span><span class="score"><b data-count="100">100</b> / 100</span></div>
+      <div class="chips">
+        <span class="chip ok">0 problems found</span>
+      </div>
+      <ul>
+        <li>Database queries use safe parameters</li>
+        <li>Passwords hashed with bcrypt</li>
+        <li>Prices looked up on the server, and Paystack webhooks signature-checked</li>
+        <li>Secrets kept in environment variables</li>
+      </ul>
+      <a class="btn" href="demo/fixed-shop.html">Open the Grade A report</a>
+    </article>
+  </section>
+  <p class="note">Both shops are made-up sample apps from the <a href="https://github.com/ijioku/cyberwarden/tree/main/examples">examples folder</a>. The reports are real CyberWarden output, unedited apart from the folder name. Each report is one offline file: findings with before-and-after fixes, a fix plan, and the list of every check that ran.</p>
+
+  <!-- Learn more -->
+  <section class="hero">
+    <h2>Learn more</h2>
+    <div class="links">
+      <a class="link" href="cyberwarden-explained.html"><b>CyberWarden Explained</b><span>The 7 security areas and 274 checks, in plain English.</span></a>
+      <a class="link" href="CyberWarden%20Explained.pdf"><b>Explainer PDF</b><span>The same guide as a printable PDF.</span></a>
+      <a class="link" href="https://github.com/ijioku/cyberwarden"><b>Source on GitHub</b><span>Install it, run it on your own project, or add the GitHub Action.</span></a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p>CyberWarden is free and open source (MIT licence), built on <a href="https://github.com/affaan-m/agentshield">AgentShield</a> by Affaan M. Made by <a href="https://github.com/ijioku">ijioku</a>. A clean scan means no known mistakes were found, not that a site can't be hacked.</p>
+  </footer>
+</div>
+<!-- Theme switch and the one-time scan animation -->
+<script src="site.js"></script>
+</body>
+</html>

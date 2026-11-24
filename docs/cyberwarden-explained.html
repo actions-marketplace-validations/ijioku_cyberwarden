@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Text encoding so symbols like ₦ and arrows show correctly -->
+<meta charset="utf-8">
+<!-- Makes the page fit phone screens when opened in a browser -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- The name shown on the browser tab and as the PDF title -->
+<title>CyberWarden Explained</title>
+<!-- Short summary for search engines and link previews -->
+<meta name="description" content="What CyberWarden checks, in plain English: 7 security areas, 274 checks, and the harm each risk can do.">
+<!-- Load the two fonts: Space Grotesk for headings, Inter for body text -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Colour settings for the light theme (the PDF always uses these) */
+:root {
+  --bg: #f6f8fb;
+  --paper: #ffffff;
+  --ink: #0f1a2b;
+  --muted: #4a5a70;
+  --line: #dbe3ee;
+  --brand: #1f5fd6;
+  --brand-soft: #e6eefc;
+  --new: #0e8f6e;
+  --new-soft: #e3f5ef;
+  --crit: #c62828;
+  --high: #d9600b;
+  --med: #b08900;
+  --low: #4a7fc1;
+  --info: #6b7a90;
+}
+/* Dark colours when the device is in dark mode and the reader hasn't picked Light */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1220;
+    --paper: #111a2c;
+    --ink: #e8eef8;
+    --muted: #a3b1c6;
+    --line: #23324d;
+    --brand: #6ea0ff;
+    --brand-soft: #16264a;
+    --new: #3fd1a6;
+    --new-soft: #0f2e27;
+    --crit: #ff6b6b;
+    --high: #ff9a4d;
+    --med: #f0c64a;
+    --low: #7fb0ff;
+    --info: #94a3b8;
+  }
+}
+/* The same dark colours when the reader picks Dark on the switch */
+:root[data-theme="dark"] {
+  --bg: #0b1220;
+  --paper: #111a2c;
+  --ink: #e8eef8;
+  --muted: #a3b1c6;
+  --line: #23324d;
+  --brand: #6ea0ff;
+  --brand-soft: #16264a;
+  --new: #3fd1a6;
+  --new-soft: #0f2e27;
+  --crit: #ff6b6b;
+  --high: #ff9a4d;
+  --med: #f0c64a;
+  --low: #7fb0ff;
+  --info: #94a3b8;
+}
+/* Make widths include padding so boxes never overflow */
+* { box-sizing: border-box; }
+/* Page background, body font and text colour */
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.6 Inter, system-ui, sans-serif;
+}
+/* The centred column that holds all the content */
+main {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+/* Heading font and spacing */
+h1, h2, h3 {
+  font-family: "Space Grotesk", Inter, sans-serif;
+  line-height: 1.2;
+  margin: 0 0 10px;
+}
+/* Section headings */
+h2 { font-size: 26px; margin-top: 8px; }
+/* Smaller headings inside sections */
+h3 { font-size: 18px; margin-top: 18px; }
+/* Paragraph spacing */
+p { margin: 0 0 12px; }
+/* Grey helper text */
+.muted { color: var(--muted); }
+/* Each big section sits on a white card */
+section {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 28px;
+  margin: 0 0 20px;
+}
+/* The cover card at the top */
+.cover {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0f2a66, #1f5fd6 60%, #0e8f6e);
+  color: #fff;
+  border: 0;
+  padding: 44px 32px;
+}
+/* The animated shield-grid pattern behind the cover text */
+.cover::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255,255,255,.18) 1.2px, transparent 1.2px);
+  background-size: 22px 22px;
+  animation: drift 24s linear infinite;
+}
+/* Slowly moves the dot grid, like a radar sweep across a screen */
+@keyframes drift { to { background-position: 220px 110px; } }
+/* Keep the cover text above the pattern */
+.cover > * { position: relative; }
+/* Big title on the cover */
+.cover h1 { font-size: 46px; margin-bottom: 8px; }
+/* Subtitle on the cover */
+.cover .lead { font-size: 19px; max-width: 560px; opacity: .95; }
+/* Row of headline numbers on the cover */
+.stats { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+/* One headline number box */
+.stat {
+  background: rgba(255,255,255,.14);
+  border: 1px solid rgba(255,255,255,.25);
+  border-radius: 12px;
+  padding: 10px 16px;
+}
+/* The number itself */
+.stat b { display: block; font: 700 26px "Space Grotesk", sans-serif; }
+/* The label under the number */
+.stat span { font-size: 13px; opacity: .9; }
+/* Tables: full width with thin lines */
+table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 8px 0 4px; }
+/* Table cell spacing and dividing line */
+th, td { text-align: left; vertical-align: top; padding: 9px 10px; border-bottom: 1px solid var(--line); }
+/* Table header row style */
+th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+/* Lets wide tables scroll sideways on small phones instead of breaking the page */
+.table-wrap { overflow-x: auto; }
+/* Small coloured severity labels */
+.sev {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  color: #fff;
+  white-space: nowrap;
+}
+/* One colour per severity level */
+.sev.c { background: var(--crit); }
+.sev.h { background: var(--high); }
+.sev.m { background: var(--med); }
+.sev.l { background: var(--low); }
+.sev.i { background: var(--info); }
+/* Coloured tag showing whether an area is original or new */
+.tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+/* Blue tag for the original AgentShield areas */
+.tag.old { background: var(--brand-soft); color: var(--brand); }
+/* Green tag for the new CyberWarden areas */
+.tag.new { background: var(--new-soft); color: var(--new); }
+/* Grid of area cards (two per row on wide screens) */
+.areas { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+/* One area card */
+.area { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+/* New areas get a green edge */
+.area.new { border-left: 4px solid var(--new); }
+/* Original areas get a blue edge */
+.area.old { border-left: 4px solid var(--brand); }
+/* The check count inside an area card */
+.area .n { font: 700 24px "Space Grotesk", sans-serif; }
+/* "What it can do to you" warning box */
+.harm {
+  background: color-mix(in srgb, var(--crit) 8%, var(--paper));
+  border-left: 4px solid var(--crit);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 8px 0 12px;
+}
+/* Example code lines */
+code, pre { font-family: ui-monospace, Consolas, monospace; font-size: 13px; }
+/* Code blocks */
+pre {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+/* Bullet list spacing */
+ul { margin: 0 0 12px; padding-left: 20px; }
+/* Space between bullets */
+li { margin-bottom: 4px; }
+/* The System / Dark / Light switch, fixed in the top corner */
+.theme {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+  display: flex;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px;
+  box-shadow: 0 4px 14px rgba(0,0,0,.12);
+}
+/* Each button in the switch */
+.theme button {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: 600 12px Inter, sans-serif;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+/* The chosen theme button is highlighted */
+.theme button[aria-pressed="true"] { background: var(--brand); color: #fff; }
+/* Sections fade and rise in as you scroll to them */
+.reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s ease; }
+/* Once visible, the section settles into place */
+.reveal.in { opacity: 1; transform: none; }
+/* People who ask for less motion get no animation at all */
+@media (prefers-reduced-motion: reduce) {
+  .cover::before { animation: none; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+}
+/* Smaller cover title on phones */
+@media (max-width: 560px) {
+  .cover h1 { font-size: 34px; }
+  section { padding: 20px 16px; }
+  /* On phones, turn each table row into a stacked card instead of squeezed columns */
+  table, tbody, tr, td { display: block; width: 100%; }
+  /* Hide the column titles, the stacked layout doesn't need them */
+  tr:first-child { display: none; }
+  /* Each row becomes a card with a line underneath */
+  tr { padding: 10px 0; border-bottom: 1px solid var(--line); }
+  /* Remove the per-cell lines and tighten spacing inside a card */
+  td { border: 0; padding: 3px 0; }
+}
+/* PDF settings: A4 pages with margins */
+@page { size: A4; margin: 14mm 12mm; }
+/* Print rules: hide the switch, show everything, keep colours */
+@media print {
+  .theme { display: none; }
+  body { background: #fff; font-size: 12.5px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  main { max-width: none; padding: 0; }
+  .reveal { opacity: 1; transform: none; }
+  .cover::before { animation: none; }
+  section { break-inside: auto; border-radius: 10px; padding: 20px 22px; margin-bottom: 12px; }
+  .area, tr, .harm, pre { break-inside: avoid; }
+  h2, h3 { break-after: avoid; }
+  .page-break { break-before: page; }
+}
+</style>
+</head>
+<body>
+<!-- System / Dark / Light switch (hidden in the PDF) -->
+<div class="theme" role="group" aria-label="Colour theme">
+  <button type="button" data-set="system" aria-pressed="true">System</button>
+  <button type="button" data-set="dark" aria-pressed="false">Dark</button>
+  <button type="button" data-set="light" aria-pressed="false">Light</button>
+</div>
+
+<main>
+<!-- Cover -->
+<section class="cover">
+  <p style="font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;margin-bottom:10px">Security scanner · plain-English guide</p>
+  <h1>CyberWarden Explained</h1>
+  <p class="lead">What CyberWarden looks for in your AI coding setup and your website code, and what each problem could do to your code, your app or your computer if nobody fixed it.</p>
+  <div class="stats">
+    <div class="stat"><b>7</b><span>security areas</span></div>
+    <div class="stat"><b>274</b><span>checks in total</span></div>
+    <div class="stat"><b>35</b><span>new checks by CyberWarden</span></div>
+    <div class="stat"><b>A–F</b><span>grade for every scan</span></div>
+  </div>
+</section>
+
+<!-- Part 1: what it is -->
+<section class="reveal">
+  <h2>1. What CyberWarden does</h2>
+  <p>CyberWarden reads the files in a project folder and looks for common security mistakes. It works like a careful inspector walking through a building: it doesn't break in, it points at the unlocked windows.</p>
+  <p>For every problem it finds, it tells you:</p>
+  <ul>
+    <li><b>What's wrong</b>, in plain English, and the exact file and line.</li>
+    <li><b>Why it matters</b>: what an attacker, or a misbehaving AI, could do with it.</li>
+    <li><b>How to fix it</b>, with a before-and-after example. Some fixes can be applied automatically after you review them.</li>
+    <li><b>How serious it is</b>: critical, high, medium, low or info.</li>
+  </ul>
+  <p>Then it adds everything up into a <b>score out of 100</b> and a <b>grade from A to F</b>, and can make an offline <b>dashboard</b> you can share with your team or a client.</p>
+  <h3>What it scans</h3>
+  <ul>
+    <li><b>Your AI coding setup.</b> Tools like Claude Code, Codex, Gemini CLI, Cursor and OpenCode are controlled by settings files, instruction files (like <code>CLAUDE.md</code>), hooks, MCP servers, skills and agents. A mistake in any of these can give an AI, or someone who tricks it, far more power over your computer than you meant to.</li>
+    <li><b>Your website or web app code</b> (when you turn on <code>--web</code>): the login, payments, database queries, forms, webhooks and AI chat features that real visitors use.</li>
+  </ul>
+  <h3>What it doesn't do</h3>
+  <ul>
+    <li>It doesn't send your code anywhere. The scan runs on your own computer, and the dashboard works offline.</li>
+    <li>It never reads the secrets inside your <code>.env</code> file. It only checks the file's name and whether git ignores it.</li>
+    <li>It doesn't attack your live site. It reads code; it doesn't hack anything.</li>
+  </ul>
+</section>
+
+<!-- Part 2: the seven areas -->
+<section class="reveal">
+  <h2>2. The 7 security areas at a glance</h2>
+  <p>CyberWarden is built on <b>AgentShield</b>, an open-source scanner by Affaan M. It keeps all of AgentShield's checks, grouped into AgentShield's 5 areas, and adds 2 new areas of its own.</p>
+  <div class="areas">
+    <div class="area old"><span class="tag old">AgentShield</span><div class="n">23</div><b>1. Secrets</b><br><span class="muted">Leaked passwords, API keys and tokens in setup files.</span></div>
+    <div class="area old"><span class="tag old">AgentShield</span><div class="n">67</div><b>2. Permissions &amp; settings</b><br><span class="muted">How much the AI is allowed to do without asking you.</span></div>
+    <div class="area old"><span class="tag old">AgentShield</span><div class="n">51</div><b>3. Hooks</b><br><span class="muted">Commands that run by themselves during an AI session.</span></div>
+    <div class="area old"><span class="tag old">AgentShield</span><div class="n">41</div><b>4. MCP servers</b><br><span class="muted">Extra tools and connections plugged into the AI.</span></div>
+    <div class="area old"><span class="tag old">AgentShield</span><div class="n">57</div><b>5. Agents, skills &amp; prompt injection</b><br><span class="muted">Instructions that could trick or hijack the AI.</span></div>
+    <div class="area new"><span class="tag new">New in CyberWarden</span><div class="n">12</div><b>6. Defense-in-Depth</b><br><span class="muted">Database, uploads, payments, privacy and server safety nets. Runs on every scan.</span></div>
+    <div class="area new"><span class="tag new">New in CyberWarden</span><div class="n">23</div><b>7. Web app code</b><br><span class="muted">The classic website attacks: SQL injection, XSS, weak logins and more. Runs with <code>--web</code>.</span></div>
+  </div>
+  <p class="muted" style="margin-top:12px">Total: 239 checks from AgentShield + 35 new = <b>274 checks</b>. Nothing from AgentShield was removed.</p>
+</section>
+
+<!-- Part 3: how serious -->
+<section class="reveal">
+  <h2>3. How serious is each problem?</h2>
+  <div class="table-wrap"><table>
+    <tr><th>Level</th><th>What it means</th><th>Points off its area's score</th></tr>
+    <tr><td><span class="sev c">Critical</span></td><td>Someone could take over the computer, the app or the money right now. Fix before anything else.</td><td>25</td></tr>
+    <tr><td><span class="sev h">High</span></td><td>A serious hole that's easy to abuse. Fix before going live.</td><td>15</td></tr>
+    <tr><td><span class="sev m">Medium</span></td><td>A weakness that makes an attack easier or the damage bigger.</td><td>5</td></tr>
+    <tr><td><span class="sev l">Low</span></td><td>Good practice that's missing. Worth fixing when you can.</td><td>2</td></tr>
+    <tr><td><span class="sev i">Info</span></td><td>A note for your awareness, not a problem by itself.</td><td>0</td></tr>
+  </table></div>
+  <p style="margin-top:10px"><b>How the score works:</b> each area starts at 100 and loses points for every problem found in it (never going below 0). Your overall score is the average of the AI-setup areas. In a <code>--web</code> scan, the website code counts for half the overall score, so a badly broken website can't hide behind a perfect AI setup.</p>
+  <p><b>Grades:</b> A = 90–100, B = 75–89, C = 60–74, D = 40–59, F = below 40.</p>
+</section>
+
+<!-- Part 4: the original five areas -->
+<section class="reveal page-break">
+  <h2>4. The original scans (from AgentShield)</h2>
+  <p>These run on every scan. They protect the computer you code on, and everything on it, from a badly configured or tricked AI assistant.</p>
+
+  <h3>Area 1 · Secrets (23 checks)</h3>
+  <p><b>What it looks for:</b> API keys, passwords and private keys typed straight into setup files: <code>CLAUDE.md</code>, settings, MCP server configs, plugin files, package-manager files (<code>.npmrc</code>), webhook URLs with a token in them, database connection strings, keys hidden with base64, and secrets that end up in AI transcripts.</p>
+  <div class="harm"><b>What it can do to you:</b> anyone who sees the file, a teammate, a public GitHub repo or a stolen laptop, can use your key as if they were you. They can run up your AI or cloud bill, read your database, send messages from your WhatsApp Business number or take payments out through your Paystack account. Deleting the key from the file isn't enough: git history keeps it, so the key must be <b>revoked and replaced</b>.</div>
+
+  <h3>Area 2 · Permissions &amp; settings (67 checks)</h3>
+  <p><b>What it looks for:</b> settings that let the AI do too much without asking: "allow everything" rules, missing deny lists, permission prompts switched off, sandboxes disabled or given an escape hatch, destructive git commands (<code>git push --force</code>, <code>reset --hard</code>) allowed, access to sensitive folders like <code>~/.ssh</code>, open network access, AI model traffic redirected to an unknown server, and plugins installed from unpinned or insecure sources. It covers Claude Code, Codex, Gemini CLI ("YOLO mode"), Hermes, OpenCode, Cursor and Copilot.</p>
+  <div class="harm"><b>What it can do to you:</b> permissions decide how much damage one mistake can do. With everything allowed, a single bad instruction, from a confused AI or from text an attacker planted in a web page, can delete your project, wipe your git history, read your SSH keys and passwords, or install software, all without you clicking "allow". A redirected model endpoint means every prompt and file you share could go to a stranger's server.</div>
+
+  <h3>Area 3 · Hooks (51 checks)</h3>
+  <p><b>What it looks for:</b> hooks are commands that run <i>automatically</i>, for example every time the AI starts or uses a tool. CyberWarden flags hooks that download and run code from the internet, send data out (including over DNS, a sneaky route), open a reverse shell or network listener, add cron jobs or edit your shell profile (to come back after a restart), touch SSH keys, password stores or the clipboard, use <code>sudo</code>, wipe disks, change firewall rules, delete files, switch off logging, approve tool calls on your behalf, or quietly rewrite what the AI is doing.</p>
+  <div class="harm"><b>What it can do to you:</b> a hook runs on your computer with your permissions, every session, without asking. A malicious hook, often hidden inside a plugin or a cloned project, is basically a virus: it can steal every key and file, give an attacker a permanent back door into your machine, or destroy data. Because it runs silently, you might never notice.</div>
+
+  <h3>Area 4 · MCP servers (41 checks)</h3>
+  <p><b>What it looks for:</b> MCP servers are add-ons that give the AI new tools (files, databases, browsers, APIs). CyberWarden flags known malicious or vulnerable packages, servers that run a shell or inline code, unpinned versions (<code>npx package</code> without a version, Docker images without a digest), connections over plain HTTP, servers open to the whole network, auto-approved tools, OAuth scopes that are too broad, and "tool poisoning": tool names or descriptions that contain hidden instructions for the AI.</p>
+  <div class="harm"><b>What it can do to you:</b> an MCP server is code you let the AI run. A poisoned or fake package can run anything on your computer the moment it starts. An unpinned version can turn malicious tomorrow when its author's account is hacked (a "supply-chain attack"). Plain HTTP lets anyone on the same Wi-Fi read or change the traffic. Poisoned tool descriptions can quietly steer the AI into leaking your data.</div>
+
+  <h3>Area 5 · Agents, skills &amp; prompt injection (57 checks)</h3>
+  <p><b>What it looks for:</b> agents, skills and instruction files are written in plain language, so attacks look like normal text. CyberWarden flags instructions to ignore safety warnings, send data to outside addresses, delete files, mine cryptocurrency, collect passwords in bulk, gain admin rights or stay hidden; invisible Unicode characters that hide instructions; encoded payloads; fake "end of prompt" markers; jailbreak and role-hijack wording; image links that leak data when shown; agents that can browse the web <i>and</i> write files (a dangerous mix); and skills that pre-approve broad tools or load unsigned code.</p>
+  <div class="harm"><b>What it can do to you:</b> this is "prompt injection": text that gives the AI orders you never gave. One poisoned skill or <code>CLAUDE.md</code> from the internet can turn your own assistant against you: it reads your secrets, sends them away, and covers its tracks, all while looking like it's helping. Invisible characters mean you can read the file and still miss the attack.</div>
+</section>
+
+<!-- Part 5: Defense-in-Depth -->
+<section class="reveal page-break">
+  <h2>5. New: Defense-in-Depth (12 checks)</h2>
+  <p><span class="tag new">Every scan</span> These checks look for the second line of defence: the safety nets that stop one small bug from turning into a disaster. Several are built for how apps are made in Nigeria: Paystack, Flutterwave, WhatsApp logins and the Nigeria Data Protection Act (NDPA 2023).</p>
+  <div class="table-wrap"><table>
+    <tr><th>Check</th><th>Level</th><th>What it can do to you</th></tr>
+    <tr><td><b>Database Row-Level Security off</b> (or a <code>service_role</code> key exposed)</td><td><span class="sev c">Critical</span></td><td>Any signed-in user can read or change every other user's records: orders, messages, bookings, balances.</td></tr>
+    <tr><td><b>SSRF to internal or cloud addresses</b></td><td><span class="sev c">Critical</span></td><td>An attacker makes your server fetch private addresses (like <code>169.254.169.254</code>) and steals your cloud credentials.</td></tr>
+    <tr><td><b>Unverified Paystack, Flutterwave or WhatsApp webhooks</b></td><td><span class="sev c">Critical</span></td><td>Anyone can send a fake "payment successful" message and get goods or services for free, or forge WhatsApp messages.</td></tr>
+    <tr><td><b>Mass assignment</b> (saving the whole request into the database)</td><td><span class="sev c">Critical</span></td><td>A visitor adds <code>"role":"admin"</code> or <code>"isPaid":true</code> to a form and becomes an admin or skips payment.</td></tr>
+    <tr><td><b>Static server shows <code>.env</code> / <code>.git</code></b></td><td><span class="sev c">Critical</span></td><td>Bots that scan the internet download your secret keys and your full source code within hours.</td></tr>
+    <tr><td><b>Unsafe file uploads</b></td><td><span class="sev h">High</span></td><td>An uploaded <code>.php</code> or <code>.sh</code> file, or a name like <code>../../</code>, can run code on your server or overwrite files.</td></tr>
+    <tr><td><b>Double-spend race condition</b></td><td><span class="sev h">High</span></td><td>Twenty requests sent at the same moment spend the same credits, coupon or wallet balance twenty times.</td></tr>
+    <tr><td><b>Passwords in logs, or HTTPS checks switched off</b></td><td><span class="sev h">High</span></td><td>Passwords sit readable in log files; with certificate checks off, anyone on the network can read or change traffic.</td></tr>
+    <tr><td><b>AI chatbot trusts chat history sent by the browser</b></td><td><span class="sev h">High</span></td><td>A visitor fakes earlier "assistant" or "system" messages and makes your bot leak data, give fake discounts or say harmful things.</td></tr>
+    <tr><td><b>BVN, NIN or other personal data unmasked</b> (NDPA 2023)</td><td><span class="sev h">High</span></td><td>Identity numbers leak through logs or pages, enabling fraud and putting the business at risk of NDPA penalties.</td></tr>
+    <tr><td><b>Unlimited OTP tries, or password change without the current password</b></td><td><span class="sev h">High</span></td><td>A 6-digit code can be guessed by trying them all; a stolen session can lock the real owner out for good.</td></tr>
+    <tr><td><b>Wildcard or "latest" package versions</b></td><td><span class="sev m">Medium</span></td><td>A hacked package update slips into your app automatically the next time you build.</td></tr>
+  </table></div>
+</section>
+
+<!-- Part 6: web app code -->
+<section class="reveal page-break">
+  <h2>6. New: Web app code (23 checks)</h2>
+  <p><span class="tag new">With <code>--web</code></span> These read your website's own code for the mistakes behind most real-world hacks, including mistakes that AI-written code often makes.</p>
+  <div class="table-wrap"><table>
+    <tr><th>Check</th><th>Level</th><th>What it can do to you</th></tr>
+    <tr><td><b>Secret key in browser code</b></td><td><span class="sev c">Critical</span></td><td>Anyone can press "View source", copy the key and use your paid services or payment account.</td></tr>
+    <tr><td><b>Secret file committed to git</b> (<code>.env</code>, private keys)</td><td><span class="sev c">Critical</span></td><td>Your keys are public the moment you push, and they stay in git history even after you delete them.</td></tr>
+    <tr><td><b>Weak password storage</b> (MD5/SHA, or plain text)</td><td><span class="sev c">Critical</span></td><td>If the database leaks, attackers crack the passwords in minutes and try them on customers' email and bank accounts.</td></tr>
+    <tr><td><b>SQL built from variables</b></td><td><span class="sev h">High</span></td><td>SQL injection: a visitor types code into a form and reads, changes or deletes your whole database.</td></tr>
+    <tr><td><b>Code or shell command built from variables</b></td><td><span class="sev h">High</span></td><td>A visitor can run their own commands on your server: full takeover.</td></tr>
+    <tr><td><b>Secret with a hardcoded fallback</b></td><td><span class="sev h">High</span></td><td>If the real setting is missing, the app quietly uses a guessable password like <code>changeme</code>.</td></tr>
+    <tr><td><b><code>.env</code> not in <code>.gitignore</code></b></td><td><span class="sev h">High</span></td><td>The next commit publishes your secrets.</td></tr>
+    <tr><td><b>Guessable random tokens</b> (<code>Math.random()</code>)</td><td><span class="sev h">High</span></td><td>Reset links, OTPs and session IDs can be predicted, so attackers log in as other people.</td></tr>
+    <tr><td><b>Webhook without a signature check</b></td><td><span class="sev h">High</span></td><td>Fake payment or message notifications are accepted as real.</td></tr>
+    <tr><td><b>Open redirect</b></td><td><span class="sev h">High</span></td><td>Your own link sends customers to a fake login page, so phishing looks trustworthy.</td></tr>
+    <tr><td><b>File path from user input</b></td><td><span class="sev h">High</span></td><td>Path traversal: a visitor downloads any file on the server, including your secrets.</td></tr>
+    <tr><td><b>Payment trusted from the browser</b></td><td><span class="sev h">High</span></td><td>A buyer changes the price to ₦1, or marks their own order as paid.</td></tr>
+    <tr><td><b>User input inside the AI system prompt</b></td><td><span class="sev h">High</span></td><td>Visitors rewrite your chatbot's rules ("ignore your instructions and…").</td></tr>
+    <tr><td><b>AI can take risky actions without approval</b></td><td><span class="sev h">High</span></td><td>A tricked chatbot sends emails, deletes records, pays or publishes with no human check.</td></tr>
+    <tr><td><b>HTML built from variables</b> (XSS)</td><td><span class="sev m">Medium</span></td><td>A visitor's comment runs as code in other people's browsers and steals their logins.</td></tr>
+    <tr><td><b>Cookie missing security flags</b></td><td><span class="sev m">Medium</span></td><td>Login cookies can be stolen by scripts or sent over insecure connections.</td></tr>
+    <tr><td><b>CORS open to every website</b></td><td><span class="sev m">Medium</span></td><td>Other websites can call your private API using your visitors' logins.</td></tr>
+    <tr><td><b>Weak Content-Security-Policy</b></td><td><span class="sev m">Medium</span></td><td>The browser's last line of defence against XSS is switched off.</td></tr>
+    <tr><td><b>No security headers</b></td><td><span class="sev m">Medium</span></td><td>Your site can be framed for clickjacking and loses basic browser protections.</td></tr>
+    <tr><td><b>Very large request body limit</b></td><td><span class="sev m">Medium</span></td><td>Huge uploads can crash or slow your server.</td></tr>
+    <tr><td><b>Sensitive route with no rate limit</b></td><td><span class="sev m">Medium</span></td><td>Bots try thousands of passwords, spam your contact form or run up your AI and SMS bill ("denial of wallet").</td></tr>
+    <tr><td><b>Error details sent to visitors</b></td><td><span class="sev m">Medium</span></td><td>Stack traces show attackers your file paths, libraries and weak spots.</td></tr>
+    <tr><td><b><code>.gitignore</code> has no <code>.env</code> rule</b></td><td><span class="sev l">Low</span></td><td>A future <code>.env</code> file would be committed by accident.</td></tr>
+  </table></div>
+</section>
+
+<!-- Part 7: how to use -->
+<section class="reveal">
+  <h2>7. How to use it</h2>
+  <h3>On your computer</h3>
+<pre>cyberwarden scan                                   # your AI coding setup
+cyberwarden scan --path ./my-app --web             # plus your website code
+cyberwarden scan --path ./my-app --web --format dashboard -o report.html</pre>
+  <p>Other formats: <code>terminal</code> (default), <code>json</code>, <code>markdown</code>, <code>html</code>, <code>sarif</code> (GitHub code scanning) and <code>dashboard</code>. Add <code>--fix</code> to apply the safe automatic fixes after reviewing them.</p>
+  <h3>On GitHub, on every push</h3>
+  <p>The CyberWarden GitHub Action scans each push and pull request, marks each problem on the exact line, and can block a merge when serious problems appear. Set <code>web: "true"</code> to include website code.</p>
+  <h3>The dashboard</h3>
+  <p>One offline HTML file with: an overview (grade, score by area, what to fix first), every finding with a before/after fix, the list of checks that ran, a fix plan, the riskiest files, compliance hints (SOC 2, PCI DSS, ISO 27001; guidance, not a certified audit) and a "Learn" page. It follows light or dark mode, works on phones and can be saved as a PDF.</p>
+  <h3>Extra tools for teams (from AgentShield)</h3>
+  <ul>
+    <li><b>Baseline:</b> save today's scan, then see only what's new or fixed next time.</li>
+    <li><b>Policy:</b> set your organisation's rules (for example "no critical findings, ever") and fail the build when they're broken.</li>
+    <li><b>Supply-chain check:</b> verifies MCP packages against known malicious and vulnerable versions.</li>
+    <li><b>Evidence pack:</b> a signed bundle of the scan for audits and client handovers.</li>
+    <li><b>Watch mode:</b> re-scans while you work and alerts you to new problems.</li>
+  </ul>
+</section>
+
+<!-- Part 8: honest limits -->
+<section class="reveal">
+  <h2>8. Honest limits</h2>
+  <p>A scanner is a smoke alarm, not a fire brigade. CyberWarden catches common, clear-cut mistakes quickly, but a clean result means "no known patterns found", not "impossible to hack". It reads code; it can't see your hosting settings, your passwords or your staff's habits.</p>
+  <p>Use it alongside code review, testing, and <b>two-factor login</b> on your GitHub, hosting, domain, email and payment accounts. Most real hacks start with a stolen account, not clever code.</p>
+  <p class="muted">CyberWarden is free and open source (MIT licence): github.com/ijioku/cyberwarden. Built on AgentShield by Affaan M, whose copyright is kept alongside CyberWarden's. Check counts are from CyberWarden v1.7.0, November 2026.</p>
+</section>
+</main>
+
+<script>
+// Find the three theme buttons
+const themeButtons = document.querySelectorAll(".theme button");
+// Read the theme the reader picked last time (browser storage may be blocked, so be careful)
+let savedTheme = "system";
+// Try to read the saved choice
+try { savedTheme = localStorage.getItem("cw-theme") || "system"; } catch (e) {}
+// Apply a theme choice to the page and the buttons
+function applyTheme(choice) {
+  // "system" removes the override so the device setting decides
+  if (choice === "system") document.documentElement.removeAttribute("data-theme");
+  // Dark or Light forces that theme
+  else document.documentElement.setAttribute("data-theme", choice);
+  // Highlight the chosen button
+  themeButtons.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.set === choice)));
+}
+// Use the saved choice when the page opens
+applyTheme(savedTheme);
+// When a button is clicked, apply and remember that choice
+themeButtons.forEach(b => b.addEventListener("click", () => {
+  // Switch the theme
+  applyTheme(b.dataset.set);
+  // Remember it for next time, if the browser allows
+  try { localStorage.setItem("cw-theme", b.dataset.set); } catch (e) {}
+}));
+
+// Find every section that should fade in on scroll
+const revealSections = document.querySelectorAll(".reveal");
+// Show everything at once if the browser can't watch scrolling
+if (!("IntersectionObserver" in window)) revealSections.forEach(s => s.classList.add("in"));
+// Otherwise reveal each section as it comes into view
+else {
+  // Watch for sections entering the screen
+  const watcher = new IntersectionObserver(entries => {
+    // For each section that just became visible
+    entries.forEach(entry => {
+      // Skip ones that aren't on screen yet
+      if (!entry.isIntersecting) return;
+      // Fade it in
+      entry.target.classList.add("in");
+      // Stop watching it, it only needs to appear once
+      watcher.unobserve(entry.target);
+    });
+  }, { threshold: 0.08 });
+  // Start watching every section
+  revealSections.forEach(s => watcher.observe(s));
+}
+// Make sure everything is visible when printing or saving as PDF
+window.addEventListener("beforeprint", () => revealSections.forEach(s => s.classList.add("in")));
+</script>
+</body>
+</html>

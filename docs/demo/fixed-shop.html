@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>CyberWarden: fixed-shop (Grade A)</title>
+<style>
+:root{color-scheme:light;--bg:#f6f7f9;--card:#fff;--text:#14161a;--muted:#5f6672;--line:#e3e6eb;--soft:#eef0f4;--accent:#4f46e5;--accent-soft:#eef0ff;
+--crit:#c81e1e;--crit-bg:#fdecec;--high:#c2410c;--high-bg:#fff1e7;--med:#a16207;--med-bg:#fdf6dc;--low:#1d4ed8;--low-bg:#e8efff;--info:#4b5563;--info-bg:#eef0f3;--ok:#15803d;--ok-bg:#e7f6ec;--code:#f3f4f7}
+:root[data-theme=dark]{color-scheme:dark;--bg:#0d0f13;--card:#161a20;--text:#e8eaee;--muted:#9aa2ae;--line:#272c35;--soft:#1d222a;--accent:#8b85ff;--accent-soft:#23234a;
+--crit:#ff7676;--crit-bg:#3a1517;--high:#ff9a5c;--high-bg:#3a2113;--med:#f1c24b;--med-bg:#352c10;--low:#7ea6ff;--low-bg:#172340;--info:#aab2bd;--info-bg:#22272f;--ok:#5fd38a;--ok-bg:#12301e;--code:#1b2027}
+@media (prefers-color-scheme:dark){:root[data-theme=system]{color-scheme:dark;--bg:#0d0f13;--card:#161a20;--text:#e8eaee;--muted:#9aa2ae;--line:#272c35;--soft:#1d222a;--accent:#8b85ff;--accent-soft:#23234a;
+--crit:#ff7676;--crit-bg:#3a1517;--high:#ff9a5c;--high-bg:#3a2113;--med:#f1c24b;--med-bg:#352c10;--low:#7ea6ff;--low-bg:#172340;--info:#aab2bd;--info-bg:#22272f;--ok:#5fd38a;--ok-bg:#12301e;--code:#1b2027}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+header.top{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:12px;padding:12px 0;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;margin-right:auto;min-width:0}
+.brand small{display:block;font-weight:500;color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:46vw}
+.logo{width:30px;height:30px;border-radius:9px;background:var(--accent);display:grid;place-items:center;color:#fff;flex:none}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--card)}
+.seg button{border:0;background:none;padding:5px 12px;border-radius:999px;cursor:pointer;font-size:13px;color:var(--muted)}
+.seg button[aria-pressed=true]{background:var(--text);color:var(--bg)}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:7px 12px;cursor:pointer;font-size:13px}
+.btn:hover{border-color:var(--accent)}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;padding-bottom:10px;scrollbar-width:none}
+nav.tabs button{border:0;background:none;padding:8px 13px;border-radius:10px;cursor:pointer;white-space:nowrap;color:var(--muted);font-weight:600;font-size:14px}
+nav.tabs button[aria-selected=true]{background:var(--accent-soft);color:var(--accent)}
+nav.tabs .count{font-weight:500;opacity:.8;margin-left:4px}
+main{padding:22px 0 60px}
+h2{font-size:20px;margin:0 0 4px;letter-spacing:-.01em}
+h3{font-size:15px;margin:0 0 10px}
+.sub{color:var(--muted);margin:0 0 18px}
+.grid{display:grid;gap:14px}
+.g-hero{grid-template-columns:minmax(0,320px) minmax(0,1fr)}
+.g-sev{grid-template-columns:repeat(5,minmax(0,1fr))}
+.g-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;min-width:0}
+.grade{display:flex;align-items:center;gap:18px}
+.ring{width:112px;height:112px;border-radius:50%;display:grid;place-items:center;flex:none}
+.ring b{font-size:46px;line-height:1}
+.ring span{display:block;font-size:12px;color:var(--muted);text-align:center}
+.verdict{font-size:17px;font-weight:600;margin:0 0 6px}
+.sevcard{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--card);cursor:pointer;text-align:left}
+.sevcard:hover{border-color:var(--accent)}
+.sevcard b{display:block;font-size:26px;line-height:1.1}
+.sevcard span{font-size:13px;color:var(--muted)}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+.critical{color:var(--crit);background:var(--crit-bg)}.high{color:var(--high);background:var(--high-bg)}.medium{color:var(--med);background:var(--med-bg)}
+.low{color:var(--low);background:var(--low-bg)}.info{color:var(--info);background:var(--info-bg)}.passed{color:var(--ok);background:var(--ok-bg)}.na,.notrun{color:var(--muted);background:var(--soft)}
+.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:7px;background:var(--soft);color:var(--muted);margin:0 6px 6px 0;white-space:nowrap}
+.meter{height:8px;border-radius:99px;background:var(--soft);overflow:hidden}
+.meter i{display:block;height:100%;border-radius:99px}
+.row{display:flex;align-items:center;gap:10px}
+.between{justify-content:space-between}
+.list{display:grid;gap:10px}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+.toolbar input[type=search]{flex:1 1 220px;min-width:0;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.toolbar select{padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--card);max-width:100%}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 11px;cursor:pointer;font-size:13px}
+.chip[aria-pressed=true]{border-color:currentColor}
+details.finding{background:var(--card);border:1px solid var(--line);border-left-width:4px;border-radius:12px}
+details.finding[open]{box-shadow:0 2px 14px rgba(0,0,0,.06)}
+details.finding>summary{list-style:none;cursor:pointer;padding:13px 15px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center}
+details.finding>summary::-webkit-details-marker{display:none}
+.ftitle{font-weight:600;overflow-wrap:anywhere}
+.floc{font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted);overflow-wrap:anywhere}
+.chev{color:var(--muted);transition:transform .15s}
+details[open]>summary .chev{transform:rotate(90deg)}
+.fbody{padding:0 15px 15px;border-top:1px solid var(--line)}
+.fbody h4{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:16px 0 6px}
+pre{margin:0;background:var(--code);border:1px solid var(--line);border-radius:10px;padding:10px 12px;overflow-x:auto;font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+.fix{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.fix .lbl{font-size:12px;font-weight:700;margin-bottom:4px}
+.bad{color:var(--crit)}.good{color:var(--ok)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+td.mono,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;overflow-wrap:anywhere}
+.tablewrap{overflow-x:auto}
+.empty{text-align:center;padding:40px 16px;color:var(--muted)}
+.check{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.check input{width:18px;height:18px;margin-top:3px;accent-color:var(--accent);flex:none}
+.check.done .ftitle{text-decoration:line-through;color:var(--muted)}
+.note{border:1px dashed var(--line);border-radius:12px;padding:12px 14px;color:var(--muted);font-size:14px;background:var(--card)}
+.linkish{border:0;background:none;padding:0;color:var(--accent);cursor:pointer;text-decoration:underline;font-size:inherit}
+dl.kv{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 14px;margin:0;font-size:14px}
+dl.kv dt{color:var(--muted)}dl.kv dd{margin:0;overflow-wrap:anywhere}
+.hide{display:none!important}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:8px 14px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+@media (max-width:860px){.g-hero,.g-2,.g-3{grid-template-columns:minmax(0,1fr)}.g-sev{grid-template-columns:repeat(3,minmax(0,1fr))}.fix{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:640px){table.stack,table.stack tbody,table.stack tr,table.stack td{display:block;width:100%}table.stack thead{display:none}table.stack tr{padding:12px 4px;border-bottom:1px solid var(--line)}table.stack td{border:0;padding:3px 0}table.stack td.mono{color:var(--muted)}.bar{gap:8px}.brand{flex:1 1 100%}.brand small{max-width:80vw}.btn{padding:6px 10px}}
+@media (max-width:480px){.g-sev{grid-template-columns:repeat(2,minmax(0,1fr))}.ring{width:92px;height:92px}.ring b{font-size:38px}details.finding>summary{grid-template-columns:minmax(0,1fr) auto}details.finding>summary .badge{grid-column:1/-1;justify-self:start}}
+@media print{header.top{position:static}nav.tabs,.toolbar,.noprint{display:none!important}section.panel{display:block!important;page-break-after:always}details.finding{break-inside:avoid}body{background:#fff}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="bar">
+    <div class="brand"><div class="logo" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg></div>
+      <div>CyberWarden <small id="projline"></small></div></div>
+    <div class="seg noprint" role="group" aria-label="Theme"><button data-theme="system">System</button><button data-theme="dark">Dark</button><button data-theme="light">Light</button></div>
+    <button class="btn noprint" id="printBtn" title="Print or save as PDF">Save PDF</button>
+    <button class="btn noprint" id="jsonBtn" title="Download the raw report as JSON">JSON</button>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="Dashboard sections"></nav>
+</div></header>
+<main class="wrap" id="main"></main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script type="application/json" id="cw-data">{"meta":{"tool":"CyberWarden","version":"1.7.0","target":"examples/fixed-shop","project":"fixed-shop","timestamp":"2026-11-24T00:32:05.698Z","web":true,"agentSetup":false},"report":{"findings":[],"score":{"grade":"A","numericScore":100,"breakdown":{"secrets":100,"permissions":100,"hooks":100,"mcp":100,"agents":100,"webapp":100}},"summary":{"totalFindings":0,"critical":0,"high":0,"medium":0,"low":0,"info":0,"filesScanned":3,"autoFixable":0,"defenses":0},"defenses":[]},"rules":[{"id":"secrets-hardcoded","name":"Hardcoded Secrets Detection","description":"Scans for hardcoded API keys, tokens, passwords, and credentials","severity":"critical","category":"secrets","group":"agent"},{"id":"secrets-env-in-config","name":"Environment Variable Exposure","description":"Checks for env var values being logged or exposed in config","severity":"high","category":"secrets","group":"agent"},{"id":"secrets-env-in-claude-md","name":"Secrets in CLAUDE.md","description":"Checks for sensitive env var assignments in CLAUDE.md files which are often committed to repos","severity":"high","category":"secrets","group":"agent"},{"id":"secrets-sensitive-env-passthrough","name":"Sensitive Env Var Passthrough","description":"Checks for MCP servers passing through excessive sensitive environment variables","severity":"medium","category":"secrets","group":"agent"},{"id":"secrets-url-credentials","name":"URL-Embedded Credentials","description":"Checks for URLs containing embedded usernames and passwords","severity":"high","category":"secrets","group":"agent"},{"id":"secrets-credential-file-reference","name":"Credential File Reference","description":"Checks for references to credential files that should never be accessed by agents","severity":"high","category":"secrets","group":"agent"},{"id":"secrets-private-key-material","name":"Private Key Material in Config","description":"Checks for PEM-encoded private keys embedded in configuration files","severity":"critical","category":"secrets","group":"agent"},{"id":"secrets-webhook-url","name":"Webhook URL with Secret Token","description":"Checks for webhook URLs that contain embedded secret tokens or API keys","severity":"high","category":"secrets","group":"agent"},{"id":"secrets-base64-obfuscation","name":"Potential Base64 Obfuscated Secret","description":"Checks for long base64-encoded strings that may be obfuscated secrets or payloads","severity":"medium","category":"secrets","group":"agent"},{"id":"secrets-hardcoded-ip-port","name":"Hardcoded Internal IP Address with Port","description":"Checks for hardcoded internal/private IP addresses with ports, which may expose internal services","severity":"medium","category":"secrets","group":"agent"},{"id":"permissions-overly-permissive","name":"Overly Permissive Access","description":"Checks the ALLOW list for permission rules that grant excessive access","severity":"high","category":"permissions","group":"agent"},{"id":"permissions-shadowed-allow","name":"Allow Rule Shadowed by Broader Prefix Rule","description":"Finds allow entries that are fully covered by a broader prefix rule, so narrowing or removing them changes nothing","severity":"medium","category":"permissions","group":"agent"},{"id":"permissions-no-deny-list","name":"Missing Deny List","description":"Checks if the settings.json has a deny list for dangerous operations","severity":"high","category":"permissions","group":"agent"},{"id":"permissions-dangerous-skip","name":"Dangerous Permission Bypass","description":"Checks for dangerously-skip-permissions or no-verify flags used affirmatively","severity":"critical","category":"permissions","group":"agent"},{"id":"permissions-all-mutable-tools","name":"All Mutable Tools Allowed","description":"Checks if the allow list grants access to all three mutable tool categories simultaneously","severity":"high","category":"permissions","group":"agent"},{"id":"permissions-destructive-git","name":"Destructive Git Commands Allowed","description":"Checks if the allow list permits destructive git operations","severity":"high","category":"permissions","group":"agent"},{"id":"permissions-sensitive-path-access","name":"Sensitive Path in Allow List","description":"Checks if the allow list permits tool access to sensitive system directories","severity":"high","category":"permissions","group":"agent"},{"id":"permissions-wildcard-root-paths","name":"Wildcard Root Path in Allow List","description":"Checks if the allow list uses wildcards on root-level or home-level directories","severity":"high","category":"permissions","group":"agent"},{"id":"permissions-no-permissions-block","name":"No Permissions Block Configured","description":"Checks if settings.json exists but has no permissions configuration at all","severity":"medium","category":"permissions","group":"agent"},{"id":"permissions-model-endpoint-override","name":"Model Endpoint Override","description":"Checks for external API base URL overrides that can reroute model traffic through attacker-controlled infrastructure","severity":"critical","category":"misconfiguration","group":"agent"},{"id":"permissions-env-in-allow","name":"Environment Variable Access in Allow List","description":"Checks for allow list entries that grant access to environment variables or env files","severity":"high","category":"permissions","group":"agent"},{"id":"permissions-unrestricted-network","name":"Unrestricted Network Tool Access","description":"Checks for allow rules that grant unrestricted access to network tools","severity":"high","category":"permissions","group":"agent"},{"id":"permissions-claude-md-world-writable","name":"CLAUDE.md File Permissions Too Open","description":"Checks if CLAUDE.md files have overly permissive filesystem permissions (world-writable or group-writable)","severity":"high","category":"permissions","group":"agent"},{"id":"hooks-ai-tool-persistence-ioc","name":"AI Tool Persistence IOC","description":"Checks hook and editor automation configs for known AI developer-tool supply-chain persistence indicators","severity":"critical","category":"hooks","group":"agent"},{"id":"hooks-hook-code-context-output","name":"Hook Code Context Output","description":"Checks non-shell hook implementations for explicit output back into Claude context","severity":"info","category":"hooks","group":"agent"},{"id":"hooks-hook-code-transcript-access","name":"Hook Code Transcript Access","description":"Checks non-shell hook implementations for direct access to Claude transcript input","severity":"info","category":"hooks","group":"agent"},{"id":"hooks-hook-code-remote-shell-payload","name":"Hook Code Remote Shell Payload","description":"Checks non-shell hook implementations for child-process execution that downloads and pipes remote shell payloads","severity":"high","category":"hooks","group":"agent"},{"id":"hooks-injection","name":"Hook Command Injection","description":"Checks hooks for command injection vulnerabilities via variable interpolation","severity":"critical","category":"hooks","group":"agent"},{"id":"hooks-exfiltration","name":"Hook Data Exfiltration","description":"Checks hooks for patterns that could exfiltrate data to external services","severity":"high","category":"hooks","group":"agent"},{"id":"hooks-no-error-handling","name":"Hook Missing Error Handling","description":"Checks if hooks suppress errors silently","severity":"medium","category":"hooks","group":"agent"},{"id":"hooks-missing-pretooluse","name":"No PreToolUse Security Hooks","description":"Checks if there are PreToolUse hooks for security validation","severity":"medium","category":"misconfiguration","group":"agent"},{"id":"hooks-unthrottled-network","name":"Hook Unthrottled Network Requests","description":"Checks for PostToolUse hooks making HTTP requests on frequent tool calls without throttling","severity":"medium","category":"hooks","group":"agent"},{"id":"hooks-sensitive-file-access","name":"Hook Accesses Sensitive Files","description":"Checks for hooks that read or write to sensitive system files","severity":"high","category":"hooks","group":"agent"},{"id":"hooks-no-stop-hooks","name":"No Stop Hooks for Session Verification","description":"Checks if there are Stop hooks for end-of-session verification","severity":"low","category":"misconfiguration","group":"agent"},{"id":"hooks-session-start-download","name":"Hook SessionStart Downloads Remote Content","description":"Checks for SessionStart hooks that download or execute remote scripts","severity":"high","category":"hooks","group":"agent"},{"id":"hooks-background-process","name":"Hook Spawns Background Process","description":"Checks for hooks that spawn background processes which persist beyond the hook's execution","severity":"high","category":"hooks","group":"agent"},{"id":"hooks-env-exfiltration","name":"Hook Env Var Exfiltration","description":"Checks for hooks that access environment variables and send them to external services","severity":"critical","category":"exposure","group":"agent"},{"id":"hooks-chained-commands","name":"Hook Chained Shell Commands","description":"Checks for hooks that chain multiple commands, which may execute beyond the matcher's intended scope","severity":"medium","category":"hooks","group":"agent"},{"id":"hooks-expensive-unscoped","name":"Hook Expensive Unscoped Command","description":"Checks for PostToolUse hooks running expensive build/lint commands with broad matchers","severity":"low","category":"hooks","group":"agent"},{"id":"hooks-output-to-world-readable","name":"Hook Writes to World-Readable Path","description":"Checks for hooks that redirect output to world-readable directories like /tmp","severity":"high","category":"hooks","group":"agent"},{"id":"hooks-source-from-env","name":"Hook Sources Script from Environment Path","description":"Checks for hooks that source scripts from environment variable paths","severity":"high","category":"injection","group":"agent"},{"id":"hooks-file-deletion","name":"Hook Deletes Files","description":"Checks for hooks that delete files, which could destroy work or cover tracks","severity":"high","category":"hooks","group":"agent"},{"id":"hooks-cron-persistence","name":"Hook Installs Cron Job","description":"Checks for hooks that install cron jobs for persistent access","severity":"critical","category":"hooks","group":"agent"},{"id":"hooks-env-mutation","name":"Hook Mutates Environment Variables","description":"Checks for hooks that set or export environment variables, which can alter subsequent command behavior","severity":"medium","category":"hooks","group":"agent"},{"id":"hooks-git-config-modification","name":"Hook Modifies Git Configuration","description":"Checks for hooks that modify git config, which can alter commit authorship, disable signing, or change hooks","severity":"high","category":"hooks","group":"agent"},{"id":"hooks-user-account-modification","name":"Hook Creates or Modifies User Accounts","description":"Checks for hooks that create, modify, or delete user accounts","severity":"critical","category":"hooks","group":"agent"},{"id":"hooks-privilege-escalation","name":"Hook Uses Privilege Escalation","description":"Checks for hooks that use sudo, su, or other privilege escalation commands","severity":"critical","category":"hooks","group":"agent"},{"id":"hooks-network-listener","name":"Hook Opens Network Listener","description":"Checks for hooks that bind to network ports, which could create reverse shells or backdoors","severity":"critical","category":"hooks","group":"agent"},{"id":"hooks-disk-wipe","name":"Hook Uses Disk Wiping Commands","description":"Checks for hooks that use destructive disk operations","severity":"critical","category":"hooks","group":"agent"},{"id":"hooks-shell-profile-modification","name":"Hook Modifies Shell Profile","description":"Checks for hooks that modify shell init files (.bashrc, .zshrc, .profile) for persistence","severity":"critical","category":"hooks","group":"agent"},{"id":"hooks-logging-disabled","name":"Hook Disables Logging or Audit Trail","description":"Checks for hooks that clear logs or disable audit mechanisms","severity":"high","category":"hooks","group":"agent"},{"id":"hooks-ssh-key-operations","name":"Hook Manipulates SSH Keys","description":"Checks for hooks that generate, copy, or modify SSH keys — enables lateral movement","severity":"critical","category":"hooks","group":"agent"},{"id":"hooks-dns-exfiltration","name":"Hook Uses DNS for Data Exfiltration","description":"Checks for hooks that use DNS queries with variable interpolation to exfiltrate data","severity":"critical","category":"exfiltration","group":"agent"},{"id":"hooks-firewall-modification","name":"Hook Modifies Firewall Rules","description":"Checks for hooks that modify iptables, ufw, or firewall rules","severity":"critical","category":"hooks","group":"agent"},{"id":"hooks-global-package-install","name":"Hook Installs Global Packages","description":"Checks for hooks that install packages globally, which can modify system-wide binaries","severity":"high","category":"hooks","group":"agent"},{"id":"hooks-container-escape","name":"Hook Uses Container Escape Techniques","description":"Checks for hooks that use Docker flags that enable container escape","severity":"critical","category":"hooks","group":"agent"},{"id":"hooks-credential-access","name":"Hook Accesses Credential Stores","description":"Checks for hooks that read password files, keychains, or credential managers","severity":"critical","category":"hooks","group":"agent"},{"id":"hooks-reverse-shell","name":"Hook Opens Reverse Shell","description":"Checks for hooks that establish reverse shell connections back to an attacker","severity":"critical","category":"hooks","group":"agent"},{"id":"hooks-clipboard-access","name":"Hook Accesses System Clipboard","description":"Checks for hooks that read or write the system clipboard, which can be used for data exfiltration","severity":"high","category":"hooks","group":"agent"},{"id":"hooks-log-tampering","name":"Hook Tampers with System Logs","description":"Checks for hooks that delete, truncate, or modify system log files to cover tracks","severity":"critical","category":"hooks","group":"agent"},{"id":"mcp-risky-servers","name":"Risky MCP Server Configuration","description":"Checks MCP server configs for servers that grant excessive capabilities","severity":"high","category":"mcp","group":"agent"},{"id":"mcp-auto-approve-project-servers","name":"MCP Project Servers Auto-Approved","description":"Checks for enableAllProjectMcpServers=true which silently trusts project-defined MCP servers","severity":"critical","category":"mcp","group":"agent"},{"id":"mcp-hardcoded-env","name":"MCP Hardcoded Environment Variables","description":"Checks if MCP configs have hardcoded secrets instead of env var references","severity":"critical","category":"mcp","group":"agent"},{"id":"mcp-npx-supply-chain","name":"MCP npx Supply Chain Risk","description":"Checks for MCP servers using npx -y which auto-installs packages without confirmation","severity":"medium","category":"mcp","group":"agent"},{"id":"mcp-no-description","name":"MCP Server Missing Description","description":"MCP servers without descriptions make auditing harder","severity":"info","category":"misconfiguration","group":"agent"},{"id":"mcp-unrestricted-root-path","name":"MCP Unrestricted Root Path","description":"Checks for MCP servers with filesystem access to root or home directory","severity":"high","category":"mcp","group":"agent"},{"id":"mcp-no-version-pin","name":"MCP No Version Pin","description":"Checks for MCP servers using npx with unversioned packages","severity":"medium","category":"mcp","group":"agent"},{"id":"mcp-url-transport","name":"MCP External URL Transport","description":"Checks for MCP servers using URL-based transport connecting to external hosts","severity":"high","category":"mcp","group":"agent"},{"id":"mcp-remote-command","name":"MCP Remote Command Execution","description":"Checks for MCP servers that download and execute remote code","severity":"critical","category":"mcp","group":"agent"},{"id":"mcp-shell-metacharacters","name":"MCP Shell Metacharacters in Args","description":"Checks for shell metacharacters in MCP server arguments that could enable command injection","severity":"medium","category":"mcp","group":"agent"},{"id":"mcp-env-override","name":"MCP Environment Variable Override","description":"Checks for MCP servers that override system-critical environment variables like PATH or LD_PRELOAD","severity":"critical","category":"mcp","group":"agent"},{"id":"mcp-excessive-server-count","name":"MCP Excessive Server Count","description":"Flags configurations with too many MCP servers","severity":"low","category":"mcp","group":"agent"},{"id":"mcp-shell-wrapper","name":"MCP Server Uses Shell Wrapper","description":"Checks for MCP servers that use sh/bash -c as command, which defeats argument separation safety","severity":"high","category":"mcp","group":"agent"},{"id":"mcp-git-url-dependency","name":"MCP Git URL Dependency","description":"Checks for MCP servers installed from git URLs which are mutable supply chain risks","severity":"high","category":"mcp","group":"agent"},{"id":"mcp-disabled-security","name":"MCP Server Has Security-Disabling Flags","description":"Checks for MCP servers with arguments that disable security features","severity":"critical","category":"mcp","group":"agent"},{"id":"mcp-dual-transport","name":"MCP Server Has Both URL and Command","description":"Checks for MCP servers with both url and command fields, which is ambiguous and potentially dangerous","severity":"medium","category":"misconfiguration","group":"agent"},{"id":"mcp-env-inheritance","name":"MCP Server Inherits Full Environment","description":"Checks for MCP servers without an explicit env block, which inherit the parent process's full environment including secrets","severity":"medium","category":"mcp","group":"agent"},{"id":"mcp-database-connection-string","name":"MCP Server Has Database Connection String","description":"Checks for MCP servers with database connection strings containing credentials in env or args","severity":"high","category":"secrets","group":"agent"},{"id":"mcp-privileged-port","name":"MCP Server Binds to Privileged Port","description":"Checks for MCP servers configured to listen on ports below 1024, which require root privileges","severity":"medium","category":"mcp","group":"agent"},{"id":"mcp-wildcard-cors","name":"MCP Server Has Wildcard CORS","description":"Checks for MCP servers with CORS set to * in their arguments or environment","severity":"medium","category":"mcp","group":"agent"},{"id":"mcp-sensitive-file-args","name":"MCP Server References Sensitive Files in Arguments","description":"Checks for MCP servers with credential files (.env, .pem, credentials.json) passed as arguments","severity":"high","category":"secrets","group":"agent"},{"id":"mcp-bind-all-interfaces","name":"MCP Server Binds to All Network Interfaces","description":"Checks for MCP servers configured to listen on 0.0.0.0, exposing the server to the network","severity":"high","category":"mcp","group":"agent"},{"id":"mcp-auto-approve","name":"MCP Server Has Auto-Approve Enabled","description":"Checks for MCP servers with autoApprove settings that skip user confirmation for tool calls","severity":"high","category":"mcp","group":"agent"},{"id":"mcp-timeout-missing","name":"MCP Server Has No Timeout Configuration","description":"Checks for MCP servers without a timeout, which could hang indefinitely or be used for resource exhaustion","severity":"low","category":"misconfiguration","group":"agent"},{"id":"mcp-npx-shell-exec","name":"MCP npx shell-exec flag","description":"Checks for MCP servers using `npx -c` / `--call` (including `--call=…`) — these pass the argument to the user's shell, giving RCE equivalent to `sh -c`.","severity":"high","category":"mcp","group":"agent"},{"id":"mcp-known-vulnerable-server","name":"Known Vulnerable MCP Server Package","description":"Cross-references MCP server packages against the CVE database to detect known-vulnerable servers","severity":"critical","category":"mcp","group":"agent"},{"id":"mcp-malicious-package","name":"Known Malicious Package in MCP Config","description":"Checks MCP server configurations for known-malicious and typosquatted packages","severity":"critical","category":"mcp","group":"agent"},{"id":"mcp-tool-name-injection","name":"MCP Server Name Contains Injection Attempt","description":"Detects MCP server names that contain instruction-like text, URLs, or prompt injection patterns","severity":"high","category":"mcp","group":"agent"},{"id":"mcp-suspicious-url-args","name":"MCP Server Args Contain Suspicious URLs","description":"Detects MCP server arguments containing URLs associated with data exfiltration or tunneling services","severity":"high","category":"mcp","group":"agent"},{"id":"mcp-overly-broad-access","name":"MCP Server Has Overly Broad File Access","description":"Detects MCP servers configured with access to sensitive directories like .ssh, .aws, /etc, or user home directories","severity":"high","category":"mcp","group":"agent"},{"id":"mcp-description-poisoning","name":"MCP Server Description Contains Poisoning Pattern","description":"Detects MCP server descriptions that contain hidden instructions, data harvesting commands, prompt reflection, or exfiltration URLs","severity":"critical","category":"mcp","group":"agent"},{"id":"mcp-env-exfiltration-urls","name":"MCP Server Env Contains Exfiltration URLs","description":"Detects MCP server environment variables containing URLs associated with data exfiltration services","severity":"high","category":"mcp","group":"agent"},{"id":"mcp-header-literal-token","name":"MCP Header Contains Literal Credential","description":"Authorization, X-Api-Key, Cookie, or any key/token header on an MCP server whose value is a literal credential or a ${VAR:-literal} default carrying one","severity":"critical","category":"secrets","group":"agent"},{"id":"mcp-token-in-url","name":"MCP URL Carries Credential","description":"MCP server url containing ?token=, api_key=, access_token=, apikey=, key= with a value, or user:pass@ userinfo","severity":"critical","category":"secrets","group":"agent"},{"id":"mcp-remote-plaintext","name":"MCP Remote Transport Without TLS","description":"Remote MCP transport (http, sse, ws, streamable-http) over http:// or ws:// to a non-loopback host; info-level note for deprecated SSE over https","severity":"high","category":"mcp","group":"agent"},{"id":"mcp-url-private-range","name":"MCP URL Targets Private or Metadata Address","description":"MCP server url host in 10/8, 172.16/12, 192.168/16, 169.254/16, fc00::/7, or a .internal name; metadata endpoints are high","severity":"medium","category":"mcp","group":"agent"},{"id":"mcp-oauth-secret-inline","name":"MCP OAuth Client Secret Inline","description":"oauth.clientSecret, oauth.client_secret, or auth.CLIENT_SECRET set to a literal instead of a ${VAR} reference","severity":"high","category":"secrets","group":"agent"},{"id":"mcp-oauth-scope-wildcard","name":"MCP OAuth Scope Too Broad","description":"oauth.scopes containing *, all, full-access, admin:*, delete_repo, or write:* style wildcards","severity":"medium","category":"mcp","group":"agent"},{"id":"mcp-oauth-endpoint-insecure","name":"MCP OAuth Endpoint Not HTTPS","description":"authServerMetadataUrl, authorizationUrl, or tokenUrl over http://, or a redirectUri that is neither loopback nor https","severity":"high","category":"mcp","group":"agent"},{"id":"mcp-headers-helper","name":"MCP headersHelper Executable","description":"headersHelper points the harness at an executable that produces request headers; in project scope a cloned repo controls what runs","severity":"high","category":"mcp","group":"agent"},{"id":"mcp-stdio-remote-bridge","name":"MCP stdio Bridge to Remote Server","description":"mcp-remote, supergateway, or mcp-proxy wrapping a remote URL; the URL gets the remote checks and --allow-http or literal --header credentials are flagged","severity":"medium","category":"mcp","group":"agent"},{"id":"mcp-stdio-shell-command","name":"MCP stdio Server Spawns a Shell or Inline Code","description":"command is a shell (sh, bash, zsh, cmd, cmd.exe, powershell, pwsh), an interpreter with -e/-c/eval inline code, or args carry a pipe to a shell, curl/wget, or base64 -d","severity":"critical","category":"mcp","group":"agent"},{"id":"mcp-stdio-env-proxy","name":"MCP stdio Env Enables Interception","description":"env sets HTTPS_PROXY/HTTP_PROXY, NODE_EXTRA_CA_CERTS, NODE_TLS_REJECT_UNAUTHORIZED=0, or DYLD_INSERT_LIBRARIES (LD_PRELOAD and PYTHONPATH are covered by mcp-env-override)","severity":"high","category":"mcp","group":"agent"},{"id":"mcp-env-mirrors-host-secret","name":"MCP Env Forwards Host Secret","description":"env entry whose key matches KEY|TOKEN|SECRET|PASSWORD|CREDENTIAL and whose value is ${SAME_NAME}, forwarding a host secret into a third-party server, or Codex-style env_vars [\"*\"]","severity":"medium","category":"exposure","group":"agent"},{"id":"mcp-auto-approve-wildcard","name":"MCP Server Tools Auto-Approved Wholesale","description":"Cline/Roo autoApprove or alwaysAllow containing * or every declared tool, Gemini trust: true, Copilot tools: [\"*\"], OpenCode permission allow for the server, or Cursor/Windsurf empty disabledTools alongside an auto-approve key","severity":"high","category":"permissions","group":"agent"},{"id":"mcp-tool-description-injection","name":"MCP Tool Description Injection","description":"Tool descriptions in config or cached tool lists containing \u003cIMPORTANT\u003e, do-not-tell-the-user, before-using-this-tool, credential paths, include-the-contents-of, ignore-previous, another server's tool name, hidden unicode, or a base64 run","severity":"critical","category":"injection","group":"agent"},{"id":"mcp-tool-shadowing","name":"MCP Tool Shadowing","description":"Two servers in the same file declare the same tool name, or a description steers calls with \"when calling \u003cother tool\u003e\" or \"instead of \u003cother server\u003e\"","severity":"high","category":"mcp","group":"agent"},{"id":"mcp-unpinned-docker-image","name":"MCP Docker Image Not Pinned by Digest","description":"command docker (or podman) run with an image reference lacking an @sha256: digest","severity":"medium","category":"mcp","group":"agent"},{"id":"package-manager-registry-credentials","name":"Package Manager Registry Credentials","description":"Checks package-manager configs for plaintext registry credentials","severity":"critical","category":"secrets","group":"agent"},{"id":"package-manager-lifecycle-scripts","name":"Package Manager Lifecycle Scripts","description":"Checks package-manager configs for risky dependency lifecycle script settings","severity":"high","category":"misconfiguration","group":"agent"},{"id":"package-manager-release-age-gates","name":"Package Manager Release Age Gates","description":"Checks package-manager configs for missing or weak package release-age cooldowns","severity":"medium","category":"misconfiguration","group":"agent"},{"id":"skills-observation-feedback-hooks","name":"Skill observation and feedback hooks","description":"Checks whether SKILL.md files define observation and feedback hooks for self-improvement loops","severity":"medium","category":"skills","group":"agent"},{"id":"skills-version-rollback-metadata","name":"Skill version and rollback metadata","description":"Checks whether SKILL.md files define versioning and rollback metadata","severity":"medium","category":"skills","group":"agent"},{"id":"agents-unrestricted-tools","name":"Agent with Unrestricted Tool Access","description":"Checks if agent definitions grant excessive tool access","severity":"high","category":"agents","group":"agent"},{"id":"agents-no-tools-restriction","name":"Agent Without Tools Restriction","description":"Checks if agent definitions omit the tools array entirely, inheriting all tools by default","severity":"high","category":"agents","group":"agent"},{"id":"agents-claude-md-url-execution","name":"CLAUDE.md URL Execution","description":"Checks CLAUDE.md files for instructions to download and execute remote content","severity":"high","category":"injection","group":"agent"},{"id":"agents-prompt-injection-patterns","name":"Agent Prompt Injection Patterns","description":"Checks agent definitions for patterns commonly used in prompt injection attacks","severity":"high","category":"injection","group":"agent"},{"id":"agents-hidden-instructions","name":"Hidden Instructions via Unicode","description":"Checks for invisible Unicode characters that could hide malicious instructions in agent definitions or CLAUDE.md","severity":"critical","category":"injection","group":"agent"},{"id":"agents-web-write-combo","name":"Agent Has Web Fetch + Write Access","description":"Checks for agents that can fetch web content and write files — a remote code injection vector","severity":"high","category":"agents","group":"agent"},{"id":"agents-prompt-injection-surface","name":"Agent Prompt Injection Surface","description":"Checks agent definitions for patterns that increase prompt injection risk","severity":"medium","category":"agents","group":"agent"},{"id":"agents-claude-md-instructions","name":"CLAUDE.md Instruction Injection","description":"Checks CLAUDE.md for patterns that could be exploited by malicious repos","severity":"high","category":"injection","group":"agent"},{"id":"agents-full-tool-escalation","name":"Agent Has Full Tool Escalation Chain","description":"Checks if an agent has the complete chain: discovery + read + write + execute tools","severity":"high","category":"agents","group":"agent"},{"id":"agents-expensive-model-readonly","name":"Expensive Model for Read-Only Agent","description":"Checks if read-only agents are using expensive models unnecessarily","severity":"low","category":"misconfiguration","group":"agent"},{"id":"agents-comment-injection","name":"Suspicious Instructions in Comments","description":"Checks for malicious instructions hidden in HTML or markdown comments","severity":"high","category":"injection","group":"agent"},{"id":"agents-oversized-prompt","name":"Oversized Agent Definition","description":"Checks for agent definitions that are unusually large, which could hide malicious instructions","severity":"medium","category":"agents","group":"agent"},{"id":"agents-unrestricted-delegation","name":"Agent Has Unrestricted Delegation Instructions","description":"Checks for agent definitions that instruct the agent to delegate to other agents or spawn sub-agents without restrictions","severity":"medium","category":"agents","group":"agent"},{"id":"agents-data-exfil-instructions","name":"Agent Contains Data Exfiltration Instructions","description":"Checks agent definitions for instructions that direct data to be sent externally","severity":"critical","category":"injection","group":"agent"},{"id":"agents-external-url-loading","name":"Agent Loads Instructions from External URL","description":"Checks for agent definitions that instruct fetching or executing content from external URLs","severity":"critical","category":"injection","group":"agent"},{"id":"agents-security-suppression","name":"Agent Instructs to Ignore Security Warnings","description":"Checks for agent definitions that instruct the agent to bypass, ignore, or suppress security warnings","severity":"high","category":"injection","group":"agent"},{"id":"agents-identity-impersonation","name":"Agent Instructed to Impersonate Identity","description":"Checks for agent definitions that instruct the agent to impersonate users, systems, or other identities","severity":"high","category":"injection","group":"agent"},{"id":"agents-filesystem-destruction","name":"Agent Instructed to Delete or Destroy Files","description":"Checks for agent definitions that instruct destructive filesystem operations","severity":"critical","category":"injection","group":"agent"},{"id":"agents-crypto-mining","name":"Agent Contains Crypto Mining Instructions","description":"Checks for agent definitions that reference cryptocurrency mining","severity":"critical","category":"injection","group":"agent"},{"id":"agents-time-bomb","name":"Agent Contains Delayed Execution Instructions","description":"Checks for agent definitions that schedule actions for a future time or condition — time-bomb behavior","severity":"high","category":"injection","group":"agent"},{"id":"agents-data-harvesting","name":"Agent Instructed to Collect Sensitive Data in Bulk","description":"Checks for agent definitions that instruct bulk collection of passwords, keys, or credentials","severity":"critical","category":"injection","group":"agent"},{"id":"agents-obfuscated-code","name":"Agent Contains Obfuscated Code Patterns","description":"Checks for agent definitions that use encoding, decoding, or obfuscation to hide malicious intent","severity":"critical","category":"injection","group":"agent"},{"id":"agents-social-engineering","name":"Agent Contains Social Engineering Instructions","description":"Checks for agent definitions that instruct the agent to deceive or manipulate users","severity":"high","category":"injection","group":"agent"},{"id":"agents-reflection-attacks","name":"Agent Contains Prompt Reflection/Override Instructions","description":"Checks for agent definitions that attempt to override system prompts or ignore prior instructions","severity":"critical","category":"injection","group":"agent"},{"id":"agents-output-manipulation","name":"Agent Contains Output Manipulation Instructions","description":"Checks for agent definitions that instruct the agent to modify, suppress, or fake output shown to users","severity":"high","category":"injection","group":"agent"},{"id":"agents-end-sequence-injection","name":"End Sequence / Boundary Injection","description":"Checks for synthetic chat-role delimiters, fake system prompts, and boundary markers used to hijack the agent's context","severity":"critical","category":"injection","group":"agent"},{"id":"agents-markdown-exfil-links","name":"Markdown Image/Link Exfiltration","description":"Checks for markdown images or links that could be used to exfiltrate data via URL parameters","severity":"high","category":"injection","group":"agent"},{"id":"agents-russian-doll-injection","name":"Russian Doll / Multi-Chain Injection","description":"Checks for nested instructions targeting downstream models in multi-agent pipelines","severity":"high","category":"injection","group":"agent"},{"id":"agents-encoded-payload","name":"Encoded Payload in Agent Definition","description":"Checks for base64, hex, rot13, or reversed text payloads that could hide malicious instructions","severity":"high","category":"injection","group":"agent"},{"id":"agents-tool-poisoning","name":"Tool Poisoning via CLAUDE.md","description":"Checks for CLAUDE.md instructions that direct the agent to use specific tools in dangerous ways","severity":"high","category":"injection","group":"agent"},{"id":"agents-environment-probing","name":"Agent Instructed to Probe Environment","description":"Checks for instructions to enumerate system information, user accounts, or network configuration","severity":"high","category":"injection","group":"agent"},{"id":"agents-persistence-mechanism","name":"Agent Instructed to Establish Persistence","description":"Checks for instructions to create cron jobs, startup scripts, or other persistence mechanisms","severity":"critical","category":"injection","group":"agent"},{"id":"agents-privilege-escalation-chain","name":"Agent Instructed to Escalate Privileges","description":"Checks for instructions that guide the agent through privilege escalation techniques","severity":"critical","category":"injection","group":"agent"},{"id":"agents-allowlist-bypass","name":"Exec Allowlist / Approval Bypass","description":"Checks for instructions that modify execution allowlists, approval configs, or permission settings programmatically","severity":"critical","category":"injection","group":"agent"},{"id":"agents-skill-tampering","name":"Skill Tampering / Unsigned Skill Loading","description":"Checks for instructions to load, import, or execute skills without verification or from untrusted sources","severity":"high","category":"injection","group":"agent"},{"id":"agents-config-secret-leakage","name":"Config File Secret Leakage","description":"Checks for instructions to write, copy, or inline secrets from env vars into config files as plaintext","severity":"critical","category":"secrets","group":"agent"},{"id":"agents-secrets-in-output","name":"Secrets Exposed in Tool Output / Transcripts","description":"Checks for instructions to log, print, or persist secrets from tool output to disk or transcripts","severity":"high","category":"secrets","group":"agent"},{"id":"agents-system-prompt-extraction","name":"System Prompt Extraction Attempt","description":"Checks for instructions that attempt to extract, leak, or reveal system prompts","severity":"high","category":"injection","group":"agent"},{"id":"agents-jailbreak-framing","name":"Jailbreak Framing / Hypothetical Bypass","description":"Checks for instructions that use fictional, hypothetical, or educational framing to bypass safety constraints","severity":"high","category":"injection","group":"agent"},{"id":"agents-role-hijacking","name":"Role Hijacking / Persona Override","description":"Checks for instructions that reassign the agent's role, persona, or behavioral constraints","severity":"high","category":"injection","group":"agent"},{"id":"agents-destructive-tool-usage","name":"Destructive Tool Usage Instructions","description":"Checks for instructions that direct the agent to use tools for destructive operations like deleting data or dropping tables","severity":"high","category":"injection","group":"agent"},{"id":"prompt-defense-posture","name":"Prompt defense posture audit","description":"Checks whether system prompt files contain defensive instructions against common LLM attack vectors.","severity":"high","category":"injection","group":"agent"},{"id":"codex-danger-full-access","name":"Codex sandbox disabled","description":"Flags sandbox_mode = \"danger-full-access\" in any Codex config scope or profile","severity":"critical","category":"permissions","group":"agent"},{"id":"codex-approval-never","name":"Codex approvals disabled","description":"Flags approval_policy = \"never\" and granular approval sub-flags turned off","severity":"critical","category":"permissions","group":"agent"},{"id":"codex-network-without-allowlist","name":"Codex workspace network without allowlist","description":"Flags [sandbox_workspace_write] network_access = true with no [features.network_proxy] domain allowlist","severity":"high","category":"permissions","group":"agent"},{"id":"codex-writable-roots-broad","name":"Codex writable roots too broad","description":"Flags writable_roots entries that cover the home directory, system directories, or the whole filesystem","severity":"high","category":"permissions","group":"agent"},{"id":"codex-trusted-home","name":"Codex trusts the home directory","description":"Flags [projects.\"\u003chome\u003e\"] or [projects.\"/\"] with trust_level = \"trusted\"","severity":"high","category":"permissions","group":"agent"},{"id":"codex-project-config-escalates","name":"Project Codex config drives policy","description":"Flags a repo .codex/config.toml that sets approval, sandbox, MCP, notify, provider, env, or hook policy","severity":"medium","category":"misconfiguration","group":"agent"},{"id":"codex-mcp-header-secret","name":"Codex MCP header carries a literal secret","description":"Flags [mcp_servers.\u003cn\u003e] http_headers with a literal Authorization, key, or token value","severity":"high","category":"secrets","group":"agent"},{"id":"codex-mcp-env-passthrough","name":"Codex passes secrets through the environment","description":"Flags env_vars globs that forward credentials and shell_environment_policy that inherits everything","severity":"medium","category":"exposure","group":"agent"},{"id":"codex-mcp-remote-http","name":"Codex MCP server over plain HTTP","description":"Flags [mcp_servers.\u003cn\u003e] url = \"http://...\" to a non-loopback host","severity":"high","category":"mcp","group":"agent"},{"id":"codex-mcp-unpinned","name":"Codex MCP server unpinned or bridged insecurely","description":"Flags npx/uvx/pipx MCP servers without a pinned version and mcp-remote style bridges to http:// endpoints","severity":"medium","category":"mcp","group":"agent"},{"id":"codex-notify-executes-shell","name":"Codex notify runs a shell or network command","description":"Flags a notify array that invokes sh/bash/zsh, curl, wget, osascript with a URL, or -c","severity":"medium","category":"hooks","group":"agent"},{"id":"codex-hooks-disabled-in-project","name":"Project Codex config disables hooks","description":"Flags [features] hooks = false inside a repo .codex/ config","severity":"medium","category":"hooks","group":"agent"},{"id":"codex-provider-redirect","name":"Codex model provider redirected insecurely","description":"Flags [model_providers.\u003cid\u003e] base_url over http:// or a non-OpenAI host with literal auth headers","severity":"high","category":"exposure","group":"agent"},{"id":"codex-web-search-live-unattended","name":"Codex live web search without approvals","description":"Flags web_search = \"live\" combined with approval_policy = \"never\"","severity":"low","category":"permissions","group":"agent"},{"id":"codex-agent-role-full-access","name":"Codex agent role escalates or carries injection","description":"Flags .codex/agents/*.toml with danger-full-access or injection phrases in developer_instructions","severity":"critical","category":"permissions","group":"agent"},{"id":"codex-hooks-auto-allow","name":"Codex hook auto-approves permissions","description":"Flags .codex/hooks.json PreToolUse or PermissionRequest commands that emit permissionDecision allow unconditionally","severity":"critical","category":"hooks","group":"agent"},{"id":"hermes-approvals-off","name":"Hermes approvals off, smart, or auto for cron","description":"Flags approvals.mode off (yolo), approvals.mode smart, and approvals.cron_mode approve","severity":"critical","category":"permissions","group":"agent"},{"id":"hermes-command-allowlist-broad","name":"Hermes command allowlist too broad","description":"Flags command_allowlist entries that permanently approve rm, sudo, curl, wget, shells, eval, or match everything","severity":"high","category":"permissions","group":"agent"},{"id":"hermes-local-terminal-unattended","name":"Hermes host terminal without manual approvals","description":"Flags terminal.backend local or ssh while approvals.mode is set to something other than manual","severity":"high","category":"permissions","group":"agent"},{"id":"hermes-docker-mount-cwd","name":"Hermes docker backend mounts the working directory","description":"Flags terminal.docker_mount_cwd_to_workspace: true","severity":"medium","category":"permissions","group":"agent"},{"id":"hermes-mcp-secret-inline","name":"Hermes MCP server has inline secret or plain HTTP URL","description":"Flags mcp_servers.\u003cn\u003e.headers or env with literal credentials and url over http:// to a non-loopback host","severity":"high","category":"secrets","group":"agent"},{"id":"hermes-public-platform-shell","name":"Hermes exposes shell toolsets to a chat platform","description":"Flags platform_toolsets for public messaging platforms that include terminal, shell, exec, file, or code_execution toolsets","severity":"high","category":"permissions","group":"agent"},{"id":"hermes-delegation-unbounded","name":"Hermes delegation unbounded with approvals off","description":"Flags delegation.max_iterations over 50 or unset while approvals.mode is off","severity":"low","category":"permissions","group":"agent"},{"id":"hermes-gateway-open-dm","name":"Hermes gateway answers unauthorized DMs","description":"Flags gateway.unauthorized_dm_behavior set to allow, respond, or accept","severity":"medium","category":"permissions","group":"agent"},{"id":"permissions-bypass-default-mode","name":"Permission prompts disabled by defaultMode","description":"Checks permissions.defaultMode for bypassPermissions, dontAsk, or auto","severity":"critical","category":"permissions","group":"agent"},{"id":"permissions-skip-dangerous-prompt","name":"Dangerous mode confirmation skipped","description":"Checks for skipDangerousModePermissionPrompt set to true","severity":"low","category":"permissions","group":"agent"},{"id":"permissions-additional-directories-broad","name":"additionalDirectories grants a sensitive directory","description":"Checks permissions.additionalDirectories for the home directory, root, or credential stores","severity":"high","category":"permissions","group":"agent"},{"id":"settings-helper-executes-command","name":"Helper command runs at session start","description":"Checks helper keys such as apiKeyHelper and statusLine.command that run a command when Claude Code starts","severity":"critical","category":"misconfiguration","group":"agent"},{"id":"settings-env-override","name":"env block overrides a security-sensitive variable","description":"Checks the env block for variables that redirect traffic, weaken TLS, or inject code into processes","severity":"critical","category":"exposure","group":"agent"},{"id":"settings-env-secret-literal","name":"Literal credential in env block","description":"Checks env values for credential shapes that are not ${VAR} references","severity":"high","category":"secrets","group":"agent"},{"id":"hooks-disabled-in-project","name":"disableAllHooks in a project settings file","description":"Checks for disableAllHooks true in a repository-scoped settings file","severity":"medium","category":"hooks","group":"agent"},{"id":"hooks-http-url-unrestricted","name":"allowedHttpHookUrls allows any or plaintext host","description":"Checks allowedHttpHookUrls for a wildcard or an http:// entry","severity":"medium","category":"hooks","group":"agent"},{"id":"settings-sandbox-escape","name":"Sandbox enabled with an escape hatch","description":"Checks sandbox settings for options that defeat the sandbox while it is enabled","severity":"high","category":"misconfiguration","group":"agent"},{"id":"settings-sandbox-network-any","name":"Sandbox network allowlist is a wildcard","description":"Checks sandbox.network.allowedDomains for a wildcard entry","severity":"high","category":"misconfiguration","group":"agent"},{"id":"settings-marketplace-insecure","name":"Plugin marketplace over plaintext or raw IP","description":"Checks extraKnownMarketplaces entries for http:// or raw IP sources","severity":"medium","category":"misconfiguration","group":"agent"},{"id":"settings-login-redirect","name":"Login redirected to a custom gateway","description":"Checks forceLoginMethod and forceLoginGatewayUrl in files that are not managed settings","severity":"high","category":"exposure","group":"agent"},{"id":"hooks-auto-allow-decision","name":"Hook auto-approves tool calls","description":"Checks PreToolUse and PermissionRequest hooks that emit permissionDecision allow with no condition","severity":"critical","category":"hooks","group":"agent"},{"id":"hooks-updated-permissions","name":"Hook grants permissions","description":"Checks hooks whose output adds permission rules through updatedPermissions","severity":"high","category":"hooks","group":"agent"},{"id":"hooks-updated-input","name":"Hook rewrites tool input","description":"Checks hooks whose output rewrites the tool call through updatedInput","severity":"medium","category":"hooks","group":"agent"},{"id":"hooks-http-plaintext","name":"HTTP hook posts over plaintext","description":"Checks type http hooks with an http:// url to a non-loopback host","severity":"high","category":"hooks","group":"agent"},{"id":"hooks-http-exfil","name":"HTTP hook ships transcript data off the machine","description":"Checks type http hooks on transcript-bearing events that post to an external host","severity":"high","category":"hooks","group":"agent"},{"id":"hooks-http-header-secret","name":"HTTP hook header carries a secret","description":"Checks http hook headers for literal credentials or secret env references without allowedEnvVars","severity":"medium","category":"hooks","group":"agent"},{"id":"hooks-stop-force-continue","name":"Stop hook forces the session to continue","description":"Checks Stop and SubagentStop hooks that always emit continue true","severity":"medium","category":"hooks","group":"agent"},{"id":"hooks-configchange-lockout","name":"ConfigChange hook blocks user or policy settings","description":"Checks ConfigChange hooks that deny user_settings or policy_settings changes","severity":"medium","category":"hooks","group":"agent"},{"id":"hooks-inline-eval-payload","name":"Hook runs a long inline payload","description":"Checks command hooks that pass more than 200 characters to node -e, python -c, bash -c, eval, or base64 -d","severity":"medium","category":"hooks","group":"agent"},{"id":"hooks-async-network","name":"Async hook makes network calls","description":"Checks async hooks whose command uses curl, wget, nc, fetch, or a URL","severity":"medium","category":"hooks","group":"agent"},{"id":"skills-dynamic-shell-injection","name":"Dynamic context shell in skill","description":"Checks SKILL.md bodies for !`command` and ```! blocks, which run through Bash before the skill loads","severity":"critical","category":"skills","group":"agent"},{"id":"skills-allowed-tools-broad","name":"Skill pre-approves broad tools","description":"Checks allowed-tools for unrestricted Bash, shell or downloader prefixes, MCP wildcards, or write plus WebFetch","severity":"high","category":"skills","group":"agent"},{"id":"skills-hooks-persist","name":"Skill registers session-persistent hooks","description":"Checks skill frontmatter hooks for PreToolUse allow, Stop continue, or SessionStart commands","severity":"high","category":"skills","group":"agent"},{"id":"skills-description-trigger-hijack","name":"Skill description steers model selection","description":"Checks description and when_to_use for trigger-hijack phrases or excessive length","severity":"medium","category":"skills","group":"agent"},{"id":"skills-tools-key-misuse","name":"SKILL.md uses tools instead of allowed-tools","description":"Checks for a tools key in SKILL.md frontmatter, which Claude Code ignores","severity":"info","category":"skills","group":"agent"},{"id":"skills-auto-invoke-side-effect","name":"Side-effect skill can be invoked by the model","description":"Checks skills that mention deploy, push, publish, delete, send, pay, or rm -rf without disable-model-invocation","severity":"medium","category":"skills","group":"agent"},{"id":"agents-bypass-permission-mode","name":"Subagent runs without permission prompts","description":"Checks subagent permissionMode for bypassPermissions or dontAsk","severity":"critical","category":"agents","group":"agent"},{"id":"agents-inline-mcp-server","name":"Subagent installs an MCP server inline","description":"Checks mcpServers inline definitions for authenticated remote urls or unpinned npx packages","severity":"high","category":"agents","group":"agent"},{"id":"agents-frontmatter-hooks-allow","name":"Subagent hooks approve or reach the network","description":"Checks subagent frontmatter hooks for PreToolUse allow output or network commands","severity":"high","category":"agents","group":"agent"},{"id":"agents-mcp-wildcard-tools","name":"Subagent tools include every MCP tool","description":"Checks subagent tools for mcp__*","severity":"medium","category":"agents","group":"agent"},{"id":"agents-memory-user-with-network","name":"Subagent with user memory can fetch remote content","description":"Checks memory user together with WebFetch or MCP tools","severity":"medium","category":"agents","group":"agent"},{"id":"agents-spawn-any-with-bash","name":"Subagent can spawn any agent and run shell","description":"Checks tools for bare Agent or Agent(*) together with Bash","severity":"medium","category":"agents","group":"agent"},{"id":"plugins-marketplace-source-command","name":"Marketplace Plugin Source Runs a Command","description":"Marketplace entries whose source is produced by running a command or a headers helper","severity":"critical","category":"misconfiguration","group":"agent"},{"id":"plugins-source-unpinned","name":"Marketplace Plugin Source Not Pinned","description":"github or git sources without a ref, npm or pip sources without a version","severity":"medium","category":"misconfiguration","group":"agent"},{"id":"plugins-source-insecure","name":"Marketplace Plugin Source Over Insecure Transport","description":"git or url sources fetched over plain http or from a raw IP address","severity":"high","category":"misconfiguration","group":"agent"},{"id":"plugins-userconfig-secret-not-sensitive","name":"Plugin userConfig Secret Not Marked Sensitive","description":"userConfig keys that name a credential but are not flagged sensitive","severity":"medium","category":"secrets","group":"agent"},{"id":"plugins-path-traversal","name":"Plugin Manifest Path Escapes the Plugin","description":"Manifest path values that traverse with ../ or point at an absolute path","severity":"high","category":"misconfiguration","group":"agent"},{"id":"plugins-hooks-relative-script","name":"Plugin Hook Runs a Relative Script","description":"Hook commands that run scripts by a relative path without ${CLAUDE_PLUGIN_ROOT}","severity":"medium","category":"misconfiguration","group":"agent"},{"id":"plugins-bundled-remote-mcp","name":"Plugin Bundles a Remote MCP Server With Static Credentials","description":"Inline mcpServers entries with a url and a literal credential in headers","severity":"high","category":"misconfiguration","group":"agent"},{"id":"plugins-dependency-unpinned","name":"Plugin Dependency Not Pinned","description":"dependencies entries given as bare names without a version","severity":"low","category":"misconfiguration","group":"agent"},{"id":"gemini-yolo-mode","name":"Gemini CLI YOLO Approval Mode","description":"Gemini settings that approve every tool call without asking","severity":"critical","category":"permissions","group":"agent"},{"id":"gemini-trusted-server","name":"Gemini CLI Trusted MCP Server","description":"MCP servers with trust true, which skips all tool confirmations","severity":"high","category":"mcp","group":"agent"},{"id":"gemini-sandbox-off","name":"Gemini CLI Tool Sandboxing Disabled","description":"security.toolSandboxing false or tools.sandboxNetworkAccess true","severity":"high","category":"permissions","group":"agent"},{"id":"gemini-folder-trust-off","name":"Gemini CLI Folder Trust Disabled","description":"security.folderTrust.enabled false, so every folder is treated as trusted","severity":"medium","category":"permissions","group":"agent"},{"id":"gemini-disable-yolo-guard-missing","name":"Gemini CLI YOLO Guard Not Set","description":"Posture note: security.disableYoloMode is not true","severity":"info","category":"permissions","group":"agent"},{"id":"opencode-permission-allow-all","name":"OpenCode Permission Allows Everything","description":"permission.bash or permission[*] set to allow at top level or on an agent","severity":"critical","category":"permissions","group":"agent"},{"id":"opencode-share-auto","name":"OpenCode Auto-Shares Sessions","description":"share set to auto, which publishes every session","severity":"medium","category":"exposure","group":"agent"},{"id":"opencode-plugin-unpinned","name":"OpenCode Plugin Not Pinned","description":"plugin entries that are bare npm names without a version","severity":"low","category":"misconfiguration","group":"agent"},{"id":"opencode-file-substitution-secret","name":"OpenCode Substitution Pulls a Secret","description":"{file:} or {env:} substitutions that load credentials into prompts, headers, or instructions","severity":"high","category":"secrets","group":"agent"},{"id":"opencode-instructions-external","name":"OpenCode Instructions Reach Outside the Repository","description":"instructions entries with ../ or an absolute path","severity":"medium","category":"misconfiguration","group":"agent"},{"id":"cursor-hook-auto-allow","name":"Cursor Hook Auto-Allows Tool Calls","description":"A permission-gate hook whose command unconditionally emits permission allow","severity":"critical","category":"hooks","group":"agent"},{"id":"cursor-hook-guard-fail-open","name":"Cursor Guard Hook Fails Open","description":"Posture note: guard hooks on shell or MCP execution without failClosed true","severity":"info","category":"hooks","group":"agent"},{"id":"copilot-agent-shell-with-remote-mcp","name":"Copilot Agent Combines Shell With Remote MCP","description":"Custom agent with the shell tool and an inline remote MCP server","severity":"high","category":"agents","group":"agent"},{"id":"copilot-mcp-tools-star","name":"Copilot MCP Server Allows All Tools","description":"mcp-servers entry with tools [\"*\"]","severity":"high","category":"mcp","group":"agent"},{"id":"instructions-import-external","name":"Instruction File Imports Outside the Repository","description":"@imports that resolve to home, absolute, or parent paths outside the repository","severity":"medium","category":"exposure","group":"agent"},{"id":"instructions-hidden-comment-payload","name":"Hidden Comment Contains a Network Instruction","description":"HTML comments that pair a URL with an imperative not caught by agents-comment-injection","severity":"medium","category":"injection","group":"agent"},{"id":"instructions-rules-paths-global","name":"Global Rules File Carries a Network Instruction","description":"Rules applied to every path that tell the agent to use curl, wget, ssh, or a URL","severity":"low","category":"exposure","group":"agent"},{"id":"defense-db-rls-disabled","name":"Database Row-Level Security Disabled or Overly Permissive","description":"Disabling Row-Level Security (RLS), using wide-open USING (true) policies, or exposing a service_role database key lets any user read or alter other users' rows.","severity":"critical","category":"misconfiguration","group":"defense"},{"id":"defense-ssrf-internal-url","name":"SSRF Risk Targeting Internal or Cloud Metadata Address","description":"Fetching cloud metadata endpoints (169.254.169.254) or passing unvalidated user URLs into fetch/curl lets attackers spy on private internal services and steal cloud credentials.","severity":"critical","category":"exfiltration","group":"defense"},{"id":"defense-unsafe-file-upload","name":"Unsafe File Upload Using Unsanitized Filename or Executable Types","description":"Saving uploaded files with their original user-supplied filename or allowing executable extensions (.php, .sh, .exe) enables path traversal and remote code execution.","severity":"high","category":"injection","group":"defense"},{"id":"defense-race-condition-billing","name":"Potential Double-Spend Race Condition in Credit or Balance Update","description":"Reading a user's credit balance and updating it in a separate non-atomic step allows attackers to send parallel requests and spend the same credits multiple times.","severity":"high","category":"misconfiguration","group":"defense"},{"id":"defense-supply-chain-unpinned","name":"Unpinned Wildcard Dependency Version in Package Config","description":"Using wildcard ('*') or 'latest' dependency versions lets a compromised package update pull malicious code into your build automatically.","severity":"medium","category":"misconfiguration","group":"defense"},{"id":"defense-sensitive-audit-logging","name":"Sensitive Credential Logged or TLS Certificate Verification Disabled","description":"Logging raw passwords/tokens leaks credentials into log files, and disabling TLS verification (rejectUnauthorized: false or NODE_TLS_REJECT_UNAUTHORIZED=0) exposes traffic to man-in-the-middle attacks.","severity":"high","category":"exposure","group":"defense"},{"id":"defense-regional-webhook-unverified","name":"Unverified Paystack, Flutterwave, or WhatsApp/Meta Webhook Handler","description":"Accepting Paystack, Flutterwave, or Meta/WhatsApp webhooks without verifying x-paystack-signature, verif-hash, or x-hub-signature-256 lets attackers forge fake payments or messages.","severity":"critical","category":"misconfiguration","group":"defense"},{"id":"defense-ai-chat-history-client-trust","name":"AI Chatbot Trusting Client-Sent Chat History or System Messages","description":"Passing req.body.messages or req.body.chatHistory straight to an LLM lets visitors fake previous assistant replies or inject fake system prompts.","severity":"high","category":"injection","group":"defense"},{"id":"defense-ndpa-pii-exposure","name":"Unmasked Personal Data (PII / BVN / NIN) Logged or Exposed (NDPA 2023)","description":"Logging or exposing sensitive personal identifiers (BVN, NIN, SSN, raw phone/email dumps) violates Nigeria's Data Protection Act (NDPA 2023) and global privacy standards.","severity":"high","category":"exposure","group":"defense"},{"id":"defense-mass-assignment","name":"Mass Assignment Passing Raw req.body Directly Into Database Write","description":"Passing raw req.body straight into create/update/Object.assign lets attackers inject hidden fields like role: 'admin' or isAdmin: true.","severity":"critical","category":"misconfiguration","group":"defense"},{"id":"defense-default-admin-or-dotfiles","name":"Static File Server Exposes Dotfiles (.env / .git)","description":"Serving dotfiles (.env, .git) from a static file server lets automated scanners download your secrets and source code. (Hardcoded fallback passwords are caught by the webapp-secret-env-fallback rule.)","severity":"critical","category":"exposure","group":"defense"},{"id":"defense-otp-or-password-change-unsafe","name":"Unprotected OTP Verification or Password Change Skipping Current Password","description":"Allowing unlimited OTP retries (especially on WhatsApp/phone logins) or letting users change email/password without verifying their current password enables account takeover.","severity":"high","category":"misconfiguration","group":"defense"},{"id":"webapp-sql-injection","name":"SQL Built From Variables","description":"Flags SQL queries assembled with template literals or + instead of $1/? parameters","severity":"high","category":"webapp","group":"web"},{"id":"webapp-xss-html-sink","name":"HTML Built From Variables","description":"Flags innerHTML, outerHTML, insertAdjacentHTML, document.write and dangerouslySetInnerHTML fed with unescaped variables","severity":"medium","category":"webapp","group":"web"},{"id":"webapp-code-injection","name":"Code or Shell Command Built From Variables","description":"Flags eval(), new Function() and child_process exec() called with non-constant input","severity":"high","category":"webapp","group":"web"},{"id":"webapp-secret-env-fallback","name":"Secret With Hardcoded Fallback","description":"Flags process.env.SECRET || 'value' patterns that ship a real or guessable default secret","severity":"high","category":"webapp","group":"web"},{"id":"webapp-frontend-secret","name":"Secret In Browser Code","description":"Flags secret keys in HTML/frontend JS, secret-named public env vars, and Flutterwave secret keys","severity":"critical","category":"webapp","group":"web"},{"id":"webapp-env-not-gitignored","name":".env File Not In .gitignore","description":"Flags real .env files that no .gitignore covers, so the next commit would publish the secrets","severity":"high","category":"webapp","group":"web"},{"id":"webapp-gitignore-missing-env","name":".gitignore Has No .env Rule","description":"Flags a root .gitignore that would not ignore a future .env file","severity":"low","category":"webapp","group":"web"},{"id":"webapp-secret-file-committed","name":"Secret File Committed To Git","description":"Flags .env files, private keys and credential JSON files that git is tracking","severity":"critical","category":"webapp","group":"web"},{"id":"webapp-weak-random-token","name":"Guessable Random Token","description":"Flags Math.random() used for tokens, OTPs, reset codes, session ids or passwords","severity":"high","category":"webapp","group":"web"},{"id":"webapp-weak-password-hash","name":"Weak Password Storage","description":"Flags MD5/SHA1/SHA256 used for passwords and passwords saved without bcrypt/argon2/scrypt","severity":"critical","category":"webapp","group":"web"},{"id":"webapp-insecure-cookie","name":"Cookie Missing Security Flags","description":"Flags res.cookie() calls missing httpOnly, secure or sameSite, and tokens written to document.cookie","severity":"medium","category":"webapp","group":"web"},{"id":"webapp-cors-wildcard","name":"CORS Open To Every Website","description":"Flags Access-Control-Allow-Origin: *, app.use(cors()) and origins reflected with credentials","severity":"medium","category":"webapp","group":"web"},{"id":"webapp-csp-unsafe","name":"Weak Content-Security-Policy","description":"Flags script-src containing 'unsafe-inline' or 'unsafe-eval'","severity":"medium","category":"webapp","group":"web"},{"id":"webapp-missing-security-headers","name":"No Security Headers","description":"Flags Express apps where no file uses helmet or sets the basic security headers","severity":"medium","category":"webapp","group":"web"},{"id":"webapp-large-body-limit","name":"Very Large Request Body Limit","description":"Flags express.json/urlencoded/bodyParser limits of 10mb or more (the 100kb default is fine)","severity":"medium","category":"webapp","group":"web"},{"id":"webapp-no-rate-limit","name":"Sensitive Route With No Rate Limit","description":"Flags login/reset/OTP/contact/chat POST routes when the project has no rate limiting at all","severity":"medium","category":"webapp","group":"web"},{"id":"webapp-webhook-no-signature","name":"Webhook Without Signature Check","description":"Flags POST webhook routes (Paystack, Flutterwave, Stripe, WhatsApp/Meta) when no signature verification exists","severity":"high","category":"webapp","group":"web"},{"id":"webapp-open-redirect","name":"Open Redirect","description":"Flags res.redirect() and location.href fed directly from query/body parameters","severity":"high","category":"webapp","group":"web"},{"id":"webapp-path-traversal","name":"File Path From User Input","description":"Flags fs/sendFile/download/path.join calls that use req.params/query/body without cleaning","severity":"high","category":"webapp","group":"web"},{"id":"webapp-error-leak","name":"Error Details Sent To Visitors","description":"Flags responses that send err.stack or the whole error object","severity":"medium","category":"webapp","group":"web"},{"id":"webapp-payment-trust-client","name":"Payment Trusted From The Browser","description":"Flags orders marked paid from req.body status fields, and charge amounts taken from req.body","severity":"high","category":"webapp","group":"web"},{"id":"webapp-llm-prompt-injection","name":"User Input Inside The AI System Prompt","description":"Flags system prompts built with ${} or + from the visitor's message or request data","severity":"high","category":"webapp","group":"web"},{"id":"webapp-llm-risky-tools","name":"AI Can Take Risky Actions Without Approval","description":"Flags AI tool definitions that send, delete, pay or publish when the file has no approval/confirmation step","severity":"high","category":"webapp","group":"web"}],"compliance":[{"framework":"soc2","frameworkName":"SOC 2 (Trust Services Criteria)","totalFindings":0,"mappedFindingCount":0,"unmappedFindingCount":0,"controls":[]},{"framework":"pci","frameworkName":"PCI DSS v4.0","totalFindings":0,"mappedFindingCount":0,"unmappedFindingCount":0,"controls":[]},{"framework":"iso","frameworkName":"ISO/IEC 27001:2022 Annex A","totalFindings":0,"mappedFindingCount":0,"unmappedFindingCount":0,"controls":[]}]}</script>
+<script>
+(function () {
+  "use strict";
+  // ---------- Data and plain-English explanations ----------
+  // The scan data embedded by CyberWarden.
+  var DATA = JSON.parse(document.getElementById("cw-data").textContent);
+  var R = DATA.report, META = DATA.meta;
+  // Most to least urgent.
+  var SEVS = ["critical", "high", "medium", "low", "info"];
+  var SEV_LABEL = { critical: "Critical", high: "High", medium: "Medium", low: "Low", info: "Info" };
+  var SEV_MEANING = {
+    critical: "Can be exploited right now and cause serious damage (stolen data, stolen money, full takeover). Fix before going live.",
+    high: "A real weakness an attacker could use. Fix soon, ideally before the next deploy.",
+    medium: "A weakness that needs other mistakes to be dangerous. Plan a fix.",
+    low: "Minor hardening. Fix when convenient.",
+    info: "Not a problem by itself: a note or good practice for awareness."
+  };
+  var GROUPS = { agent: "AI agent setup (AgentShield)", defense: "Defense-in-Depth (CyberWarden)", web: "Web app code (CyberWarden)" };
+  var CAT = {
+    secrets: ["Secrets", "API keys, passwords or tokens written where others can read them. Anyone who copies a key can spend your money or read your data."],
+    permissions: ["Permissions", "What your AI coding tools are allowed to do. Too much freedom lets a tricked AI delete files or run dangerous commands."],
+    hooks: ["Hooks", "Scripts that run automatically at set moments. A bad hook can quietly run harmful code or send data out every time it fires."],
+    mcp: ["MCP servers", "Tools plugged into your AI (Slack, GitHub, databases). Each one can see and do what you allow, so they must be trusted and limited."],
+    skills: ["Skills", "Instruction files your AI follows. A malicious skill can tell the AI to do harmful things."],
+    agents: ["Agents", "AI helper definitions. Unrestricted agents can use powerful tools you didn't mean to give them."],
+    injection: ["Prompt injection", "Hidden instructions inside content the AI reads (pages, files, tool results) that try to take control of it."],
+    exposure: ["Exposure", "Sensitive files or data reachable by people who shouldn't see them, like a served .env file or a default password."],
+    exfiltration: ["Data leaks", "Ways data could be sent out of your system, such as requests to unknown servers or tricking the server into fetching internal addresses (SSRF)."],
+    misconfiguration: ["Misconfiguration", "Settings that weaken security: disabled database protection, unpinned packages, unsafe uploads, unverified webhooks."],
+    webapp: ["Web app code", "Bugs in your site's own code: SQL injection, XSS, insecure cookies, missing rate limits, trusting prices from the browser and more."]
+  };
+  var GRADES = [["A", "90-100", "Strong. No serious problems found."], ["B", "75-89", "Good, with a few things to tidy up."], ["C", "60-74", "Fair. Real weaknesses to fix."], ["D", "40-59", "Poor. Serious problems: fix before deploying."], ["F", "0-39", "Failing. Critical problems: do not deploy."]];
+
+  // ---------- Small helpers ----------
+  // Create an element with attributes and children; text always goes in as text, never HTML.
+  function h(tag, attrs, kids) {
+    var el = document.createElement(tag);
+    if (attrs) for (var k in attrs) {
+      var v = attrs[k];
+      if (v === null || v === undefined || v === false) continue;
+      if (k === "class") el.className = v;
+      else if (k === "text") el.textContent = v;
+      else if (k.slice(0, 2) === "on") el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v === true ? "" : String(v));
+    }
+    (Array.isArray(kids) ? kids : kids === undefined ? [] : [kids]).forEach(function (c) {
+      if (c === null || c === undefined || c === false) return;
+      el.appendChild(typeof c === "string" || typeof c === "number" ? document.createTextNode(String(c)) : c);
+    });
+    return el;
+  }
+  // A coloured severity badge.
+  function sevBadge(s) { return h("span", { class: "badge " + s }, [h("span", { class: "dot" }), SEV_LABEL[s] || s]); }
+  // Plural helper: "1 problem" / "3 problems".
+  function plural(n, word) { return n + " " + word + (n === 1 ? "" : "s"); }
+  // Colour for a 0-100 score.
+  function scoreColor(n) { return n >= 90 ? "var(--ok)" : n >= 75 ? "var(--low)" : n >= 60 ? "var(--med)" : n >= 40 ? "var(--high)" : "var(--crit)"; }
+  // Show a short message at the bottom of the screen.
+  function toast(msg) { var t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(function () { t.classList.remove("show"); }, 1800); }
+  // Copy text to the clipboard, falling back quietly if the browser blocks it.
+  function copy(text) { try { navigator.clipboard.writeText(text).then(function () { toast("Copied"); }, function () { toast("Copy blocked by the browser"); }); } catch (e) { toast("Copy blocked by the browser"); } }
+  // Read and write browser storage without crashing in private windows.
+  function store(key, val) { try { if (val === undefined) return localStorage.getItem(key); localStorage.setItem(key, val); } catch (e) { return null; } }
+
+  // ---------- Link findings to the checks that produced them ----------
+  // Longest rule IDs first, so "webapp-xss-html-sink" wins over a shorter prefix.
+  var RULES = DATA.rules.slice().sort(function (a, b) { return b.id.length - a.id.length; });
+  var RULE_BY_ID = {};
+  DATA.rules.forEach(function (r) { RULE_BY_ID[r.id] = r; r.hits = 0; });
+  // Each finding gets its rule, family and a stable key.
+  var FINDINGS = R.findings.map(function (f, i) {
+    var rule = null;
+    for (var j = 0; j < RULES.length; j++) { var id = RULES[j].id; if (f.id === id || f.id.indexOf(id + "-") === 0) { rule = RULES[j]; break; } }
+    if (rule) rule.hits++;
+    var group = rule ? rule.group : (f.id.indexOf("webapp-") === 0 ? "web" : f.id.indexOf("defense-") === 0 ? "defense" : "agent");
+    return { f: f, i: i, rule: rule, group: group, key: f.id + "|" + f.file + "|" + (f.line || 0) };
+  }).sort(function (a, b) { return SEVS.indexOf(a.f.severity) - SEVS.indexOf(b.f.severity) || String(a.f.file).localeCompare(String(b.f.file)) || (a.f.line || 0) - (b.f.line || 0); });
+  // A check "ran" unless it's a web-app check and the scan didn't use --web.
+  function checkStatus(r) { if (r.group === "web" && !META.web) return "notrun"; if (r.hits > 0) return "failed"; if (r.group === "agent" && META.agentSetup === false) return "na"; return "passed"; }
+
+  // ---------- Theme switch (System / Dark / Light) ----------
+  function setTheme(t) {
+    document.documentElement.dataset.theme = t;
+    store("cw-theme", t);
+    document.querySelectorAll(".seg button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.theme === t)); });
+  }
+  document.querySelectorAll(".seg button").forEach(function (b) { b.addEventListener("click", function () { setTheme(b.dataset.theme); }); });
+  setTheme(store("cw-theme") || "system");
+
+  // ---------- Header buttons ----------
+  document.getElementById("projline").textContent = META.project + " · " + new Date(META.timestamp).toLocaleString();
+  document.getElementById("printBtn").addEventListener("click", function () { window.print(); });
+  document.getElementById("jsonBtn").addEventListener("click", function () {
+    var blob = new Blob([JSON.stringify(R, null, 2)], { type: "application/json" });
+    var a = h("a", { href: URL.createObjectURL(blob), download: "cyberwarden-" + META.project + ".json" });
+    document.body.appendChild(a); a.click(); a.remove();
+  });
+
+  // ---------- Shared filter state for the Findings tab ----------
+  var FILTER = { q: "", sev: {}, group: "all", cat: "all", file: "" };
+
+  // ---------- Tabs ----------
+  var checksRun = DATA.rules.filter(function (r) { var s = checkStatus(r); return s === "failed" || s === "passed"; }).length;
+  var TABS = [
+    { id: "overview", label: "Overview", render: renderOverview },
+    { id: "findings", label: "Findings", count: FINDINGS.length, render: renderFindings },
+    { id: "checks", label: "Security checks", count: checksRun, render: renderChecks },
+    { id: "plan", label: "Fix plan", render: renderPlan },
+    { id: "files", label: "Files", render: renderFiles },
+    { id: "compliance", label: "Compliance", render: renderCompliance },
+    { id: "learn", label: "Learn", render: renderLearn }
+  ];
+  var nav = document.querySelector("nav.tabs"), main = document.getElementById("main");
+  TABS.forEach(function (t) {
+    nav.appendChild(h("button", { role: "tab", id: "tab-" + t.id, "aria-controls": "panel-" + t.id, onclick: function () { show(t.id); } },
+      [t.label, t.count !== undefined ? h("span", { class: "count", text: "(" + t.count + ")" }) : null]));
+    main.appendChild(h("section", { class: "panel hide", id: "panel-" + t.id, role: "tabpanel", "aria-labelledby": "tab-" + t.id }));
+  });
+  // Switch to a tab, drawing its contents fresh.
+  function show(id) {
+    TABS.forEach(function (t) {
+      var on = t.id === id, panel = document.getElementById("panel-" + t.id);
+      document.getElementById("tab-" + t.id).setAttribute("aria-selected", String(on));
+      panel.classList.toggle("hide", !on);
+      if (on) { panel.textContent = ""; t.render(panel); }
+    });
+    if (location.hash !== "#" + id) history.replaceState(null, "", "#" + id);
+    window.scrollTo({ top: 0 });
+  }
+  // Jump to the Findings tab with some filters already set.
+  function openFindings(patch) {
+    FILTER = { q: "", sev: {}, group: "all", cat: "all", file: "" };
+    for (var k in patch) FILTER[k] = patch[k];
+    show("findings");
+  }
+
+  // ---------- Overview ----------
+  function renderOverview(p) {
+    var s = R.summary, sc = R.score;
+    var serious = s.critical + s.high;
+    var verdict = s.critical > 0 ? plural(s.critical, "critical problem") + " to fix before you deploy."
+      : s.high > 0 ? plural(s.high, "high-risk problem") + " to fix soon."
+      : s.totalFindings > 0 ? "No serious problems. " + plural(s.totalFindings, "smaller item") + " to review."
+      : "No problems found by the checks that ran.";
+    var col = scoreColor(sc.numericScore);
+    p.appendChild(h("h2", { text: "Security overview" }));
+    p.appendChild(h("p", { class: "sub", text: "What CyberWarden found in " + META.project + ", and what to do next." }));
+
+    // Grade and verdict.
+    var hero = h("div", { class: "grid g-hero" });
+    hero.appendChild(h("div", { class: "card grade" }, [
+      h("div", { class: "ring", style: "background:conic-gradient(" + col + " " + sc.numericScore + "%, var(--soft) 0)" },
+        h("div", { style: "width:84%;height:84%;border-radius:50%;background:var(--card);display:grid;place-items:center" },
+          h("div", null, [h("b", { style: "color:" + col, text: sc.grade }), h("span", { text: sc.numericScore + " / 100" })]))),
+      h("div", null, [h("p", { class: "verdict", text: verdict }),
+        h("p", { class: "sub", style: "margin:0", text: plural(s.totalFindings, "finding") + " across " + plural(s.filesScanned, "file") + ". " + checksRun + " security checks ran." })])
+    ]));
+    // Score per area.
+    var areas = h("div", { class: "card" }, [h("h3", { text: "Score by area" })]);
+    var bd = sc.breakdown || {};
+    var names = { secrets: "Secrets", permissions: "Permissions", hooks: "Hooks", mcp: "MCP servers", agents: "Agents", webapp: "Web app code" };
+    Object.keys(bd).forEach(function (k) {
+      var v = bd[k];
+      areas.appendChild(h("div", { style: "margin:10px 0" }, [
+        h("div", { class: "row between", style: "font-size:14px;margin-bottom:4px" }, [h("span", { text: names[k] || k }), h("b", { style: "color:" + scoreColor(v), text: v + "" })]),
+        h("div", { class: "meter" }, h("i", { style: "width:" + v + "%;background:" + scoreColor(v) }))
+      ]));
+    });
+    hero.appendChild(areas);
+    p.appendChild(hero);
+
+    // Severity counts (click to see them).
+    p.appendChild(h("h3", { style: "margin:22px 0 10px", text: "Findings by severity" }));
+    var sevs = h("div", { class: "grid g-sev" });
+    SEVS.forEach(function (sv) {
+      var o = {}; o[sv] = true;
+      sevs.appendChild(h("button", { class: "sevcard", title: SEV_MEANING[sv], onclick: function () { openFindings({ sev: o }); } },
+        [h("b", { class: sv, style: "background:none", text: String(s[sv] || 0) }), h("span", { text: SEV_LABEL[sv] })]));
+    });
+    p.appendChild(sevs);
+
+    // What to fix first.
+    var top = FINDINGS.filter(function (x) { return x.f.severity === "critical" || x.f.severity === "high"; }).slice(0, 5);
+    var two = h("div", { class: "grid g-2", style: "margin-top:14px" });
+    var first = h("div", { class: "card" }, [h("h3", { text: serious ? "Fix these first" : "Nothing urgent" })]);
+    if (!top.length) first.appendChild(h("p", { class: "sub", style: "margin:0", text: "No critical or high findings. Review the smaller items in the Findings tab." }));
+    top.forEach(function (x) {
+      first.appendChild(h("div", { class: "row", style: "margin:9px 0;align-items:flex-start" }, [sevBadge(x.f.severity),
+        h("div", { style: "min-width:0" }, [h("button", { class: "linkish", style: "text-align:left", text: x.f.title, onclick: function () { openFindings({ q: x.f.title }); } }),
+          h("div", { class: "floc", text: x.f.file + (x.f.line ? ":" + x.f.line : "") })])]));
+    });
+    two.appendChild(first);
+    // Scan details.
+    var groupsHit = {};
+    FINDINGS.forEach(function (x) { groupsHit[x.group] = (groupsHit[x.group] || 0) + 1; });
+    two.appendChild(h("div", { class: "card" }, [h("h3", { text: "Scan details" }), h("dl", { class: "kv" }, [
+      h("dt", { text: "Project" }), h("dd", { class: "mono", text: META.target }),
+      h("dt", { text: "Scanned" }), h("dd", { text: new Date(META.timestamp).toLocaleString() }),
+      h("dt", { text: "Tool" }), h("dd", { text: "CyberWarden " + META.version }),
+      h("dt", { text: "Web-app checks" }), h("dd", { text: META.web ? "On (--web)" : "Off. Add --web to scan your app's code." }),
+      h("dt", { text: "Files scanned" }), h("dd", { text: String(s.filesScanned) }),
+      h("dt", { text: "Auto-fixable" }), h("dd", { text: s.autoFixable ? s.autoFixable + " (run with --fix after reviewing)" : "0" }),
+      h("dt", { text: "By source" }), h("dd", { text: Object.keys(GROUPS).map(function (g) { return GROUPS[g].split(" (")[0] + ": " + (groupsHit[g] || 0); }).join(" · ") })
+    ])]));
+    p.appendChild(two);
+
+    // Protections already in place.
+    if (R.defenses && R.defenses.length) {
+      var d = h("div", { class: "card", style: "margin-top:14px" }, [h("h3", { text: "Protections already in place (" + R.defenses.length + ")" })]);
+      R.defenses.slice(0, 12).forEach(function (x) { d.appendChild(h("div", { class: "row", style: "margin:6px 0" }, [h("span", { class: "badge passed", text: "OK" }), h("span", { text: x.title || x.name || x.id || "Defense" }), h("span", { class: "floc", text: x.file || "" })])); });
+      p.appendChild(d);
+    }
+    p.appendChild(h("p", { class: "note", style: "margin-top:14px", text: "A scanner is a smoke alarm, not a fire brigade: it catches common, clear-cut mistakes fast, but a clean result means \"no known patterns found\", not \"impossible to hack\". Pair it with code review, testing and 2FA on your accounts." }));
+  }
+
+  // ---------- Findings ----------
+  function renderFindings(p) {
+    p.appendChild(h("h2", { text: "Findings" }));
+    p.appendChild(h("p", { class: "sub", text: "Every problem found, most urgent first. Open one to see why it matters and how to fix it." }));
+    var bar = h("div", { class: "toolbar" });
+    var q = h("input", { type: "search", placeholder: "Search titles, files, rule IDs…", value: FILTER.q, "aria-label": "Search findings" });
+    bar.appendChild(q);
+    var chips = {};
+    SEVS.forEach(function (sv) {
+      var c = h("button", { class: "chip " + sv, "aria-pressed": String(!!FILTER.sev[sv]), text: SEV_LABEL[sv] + " " + (R.summary[sv] || 0) });
+      c.addEventListener("click", function () { FILTER.sev[sv] = !FILTER.sev[sv]; c.setAttribute("aria-pressed", String(FILTER.sev[sv])); draw(); });
+      chips[sv] = c; bar.appendChild(c);
+    });
+    var gsel = h("select", { "aria-label": "Source" }, [h("option", { value: "all", text: "All sources" })].concat(Object.keys(GROUPS).map(function (g) { return h("option", { value: g, text: GROUPS[g] }); })));
+    gsel.value = FILTER.group;
+    var cats = {}; FINDINGS.forEach(function (x) { cats[x.f.category] = 1; });
+    var csel = h("select", { "aria-label": "Category" }, [h("option", { value: "all", text: "All categories" })].concat(Object.keys(cats).sort().map(function (c) { return h("option", { value: c, text: (CAT[c] || [c])[0] }); })));
+    csel.value = FILTER.cat;
+    bar.appendChild(gsel); bar.appendChild(csel);
+    p.appendChild(bar);
+    var info = h("div", { class: "row between", style: "margin-bottom:10px;font-size:14px;color:var(--muted)" });
+    p.appendChild(info);
+    var list = h("div", { class: "list" });
+    p.appendChild(list);
+    q.addEventListener("input", function () { FILTER.q = q.value; draw(); });
+    gsel.addEventListener("change", function () { FILTER.group = gsel.value; draw(); });
+    csel.addEventListener("change", function () { FILTER.cat = csel.value; draw(); });
+    // Redraw the list whenever a filter changes.
+    function draw() {
+      var anySev = SEVS.some(function (s) { return FILTER.sev[s]; });
+      var needle = FILTER.q.trim().toLowerCase();
+      var shown = FINDINGS.filter(function (x) {
+        if (anySev && !FILTER.sev[x.f.severity]) return false;
+        if (FILTER.group !== "all" && x.group !== FILTER.group) return false;
+        if (FILTER.cat !== "all" && x.f.category !== FILTER.cat) return false;
+        if (FILTER.file && x.f.file !== FILTER.file) return false;
+        if (needle && (x.f.title + " " + x.f.file + " " + x.f.id + " " + x.f.description).toLowerCase().indexOf(needle) < 0) return false;
+        return true;
+      });
+      info.textContent = "";
+      info.appendChild(h("span", { text: "Showing " + shown.length + " of " + FINDINGS.length }));
+      if (FILTER.file || anySev || needle || FILTER.group !== "all" || FILTER.cat !== "all")
+        info.appendChild(h("button", { class: "linkish", text: "Clear filters", onclick: function () { openFindings({}); } }));
+      list.textContent = "";
+      if (!shown.length) { list.appendChild(h("div", { class: "empty", text: FINDINGS.length ? "No findings match these filters." : "No findings. Every check that ran passed." })); return; }
+      shown.slice(0, 400).forEach(function (x) { list.appendChild(findingCard(x)); });
+      if (shown.length > 400) list.appendChild(h("p", { class: "note", text: (shown.length - 400) + " more: narrow the filters to see them." }));
+    }
+    draw();
+  }
+  // One expandable finding.
+  function findingCard(x) {
+    var f = x.f, loc = f.file + (f.line ? ":" + f.line : "");
+    var body = h("div", { class: "fbody" });
+    body.appendChild(h("h4", { text: "Why it matters" }));
+    body.appendChild(h("p", { style: "margin:0", text: f.description }));
+    body.appendChild(h("h4", { text: "Where" }));
+    body.appendChild(h("div", { class: "row" }, [h("span", { class: "mono", text: loc }), h("button", { class: "linkish noprint", text: "Copy", onclick: function () { copy(loc); } })]));
+    if (f.evidence) { body.appendChild(h("h4", { text: "What was found" })); body.appendChild(h("pre", { text: f.evidence })); }
+    if (f.fix) {
+      body.appendChild(h("h4", { text: "How to fix" + (f.fix.auto ? " (auto-fixable)" : "") }));
+      body.appendChild(h("p", { style: "margin:0 0 8px", text: f.fix.description }));
+      if (f.fix.before || f.fix.after) body.appendChild(h("div", { class: "fix" }, [
+        f.fix.before ? h("div", null, [h("div", { class: "lbl bad", text: "Before (risky)" }), h("pre", { text: f.fix.before })]) : null,
+        f.fix.after ? h("div", null, [h("div", { class: "lbl good", text: "After (safer)" }), h("pre", { text: f.fix.after })]) : null
+      ]));
+    }
+    var cat = CAT[f.category];
+    if (cat) { body.appendChild(h("h4", { text: "About " + cat[0].toLowerCase() })); body.appendChild(h("p", { style: "margin:0;color:var(--muted)", text: cat[1] })); }
+    body.appendChild(h("h4", { text: "Details" }));
+    body.appendChild(h("div", null, [h("span", { class: "tag", text: "Rule: " + (x.rule ? x.rule.id : f.id) }), h("span", { class: "tag", text: GROUPS[x.group] }),
+      h("span", { class: "tag", text: "Category: " + (cat ? cat[0] : f.category) }), f.runtimeConfidence ? h("span", { class: "tag", text: "Confidence: " + f.runtimeConfidence }) : null]));
+    return h("details", { class: "finding", style: "border-left-color:var(--" + ({ critical: "crit", high: "high", medium: "med", low: "low", info: "info" }[f.severity]) + ")" }, [
+      h("summary", null, [sevBadge(f.severity), h("div", { style: "min-width:0" }, [h("div", { class: "ftitle", text: f.title }), h("div", { class: "floc", text: loc })]), h("span", { class: "chev", "aria-hidden": "true", text: "›" })]),
+      body
+    ]);
+  }
+
+  // ---------- Security checks ----------
+  function renderChecks(p) {
+    var counts = { failed: 0, passed: 0, notrun: 0, na: 0 };
+    DATA.rules.forEach(function (r) { counts[checkStatus(r)]++; });
+    p.appendChild(h("h2", { text: "Security checks" }));
+    p.appendChild(h("p", { class: "sub", text: checksRun + " checks ran: " + counts.passed + " passed, " + counts.failed + " found problems." + (counts.na ? " " + counts.na + " AI-coding-setup checks are not applicable (no Claude Code, Cursor or MCP setup in this project)." : "") + (counts.notrun ? " " + counts.notrun + " web-app checks didn't run (scan with --web to include them)." : "") }));
+    var st = { status: "all", group: "all", q: "" };
+    var bar = h("div", { class: "toolbar" });
+    var q = h("input", { type: "search", placeholder: "Search checks…", "aria-label": "Search checks" });
+    bar.appendChild(q);
+    var statusChips = [["all", "All"], ["failed", "Found problems " + counts.failed], ["passed", "Passed " + counts.passed], ["na", "Not applicable " + counts.na], ["notrun", "Not run " + counts.notrun]].map(function (s) {
+      var c = h("button", { class: "chip", "aria-pressed": String(s[0] === "all"), text: s[1] });
+      c.addEventListener("click", function () { st.status = s[0]; statusChips.forEach(function (b) { b.setAttribute("aria-pressed", "false"); }); c.setAttribute("aria-pressed", "true"); draw(); });
+      bar.appendChild(c); return c;
+    });
+    var gsel = h("select", { "aria-label": "Source" }, [h("option", { value: "all", text: "All sources" })].concat(Object.keys(GROUPS).map(function (g) { return h("option", { value: g, text: GROUPS[g] }); })));
+    bar.appendChild(gsel);
+    p.appendChild(bar);
+    var wrap = h("div", { class: "tablewrap card", style: "padding:6px 10px" });
+    p.appendChild(wrap);
+    q.addEventListener("input", function () { st.q = q.value.trim().toLowerCase(); draw(); });
+    gsel.addEventListener("change", function () { st.group = gsel.value; draw(); });
+    var order = { failed: 0, passed: 1, notrun: 2, na: 3 };
+    // Redraw the table.
+    function draw() {
+      var rows = DATA.rules.filter(function (r) {
+        var s = checkStatus(r);
+        if (st.status !== "all" && s !== st.status) return false;
+        if (st.group !== "all" && r.group !== st.group) return false;
+        if (st.q && (r.name + " " + r.id + " " + r.description).toLowerCase().indexOf(st.q) < 0) return false;
+        return true;
+      }).sort(function (a, b) { return order[checkStatus(a)] - order[checkStatus(b)] || SEVS.indexOf(a.severity) - SEVS.indexOf(b.severity) || a.name.localeCompare(b.name); });
+      wrap.textContent = "";
+      if (!rows.length) { wrap.appendChild(h("div", { class: "empty", text: "No checks match." })); return; }
+      var tb = h("tbody");
+      rows.slice(0, 600).forEach(function (r) {
+        var s = checkStatus(r);
+        tb.appendChild(h("tr", null, [
+          h("td", null, h("span", { class: "badge " + (s === "failed" ? r.severity : s), text: s === "failed" ? plural(r.hits, "finding") : s === "passed" ? "Passed" : s === "na" ? "Not applicable" : "Not run" })),
+          h("td", null, [h("div", { style: "font-weight:600", text: r.name }), h("div", { style: "color:var(--muted);font-size:13px", text: r.description })]),
+          h("td", { class: "mono", text: r.id }),
+          h("td", null, sevBadge(r.severity)),
+          h("td", { text: GROUPS[r.group].split(" (")[0] }),
+          h("td", null, s === "failed" ? h("button", { class: "linkish", text: "View", onclick: function () { openFindings({ q: r.id }); } }) : "")
+        ]));
+      });
+      wrap.appendChild(h("table", { class: "stack" }, [h("thead", null, h("tr", null, ["Result", "Check", "Rule ID", "Severity", "Source", ""].map(function (t) { return h("th", { text: t }); }))), tb]));
+    }
+    draw();
+  }
+
+  // ---------- Fix plan ----------
+  function renderPlan(p) {
+    var key = "cw-done:" + META.target + ":" + META.timestamp;
+    var done = {};
+    try { done = JSON.parse(store(key) || "{}"); } catch (e) { done = {}; }
+    p.appendChild(h("h2", { text: "Fix plan" }));
+    p.appendChild(h("p", { class: "sub", text: "Work top to bottom. Tick items as you fix them (saved in this browser only), then re-scan to confirm." }));
+    if (!FINDINGS.length) { p.appendChild(h("div", { class: "empty card", text: "Nothing to fix. Re-scan after every big change." })); return; }
+    var prog = h("div", { class: "card", style: "margin-bottom:14px" });
+    p.appendChild(prog);
+    // Update the progress bar.
+    function progress() {
+      var n = FINDINGS.filter(function (x) { return done[x.key]; }).length, pct = Math.round(n / FINDINGS.length * 100);
+      prog.textContent = "";
+      prog.appendChild(h("div", { class: "row between", style: "margin-bottom:8px" }, [h("b", { text: n + " of " + FINDINGS.length + " fixed" }), h("span", { text: pct + "%" })]));
+      prog.appendChild(h("div", { class: "meter" }, h("i", { style: "width:" + pct + "%;background:var(--ok)" })));
+    }
+    progress();
+    SEVS.forEach(function (sv) {
+      var items = FINDINGS.filter(function (x) { return x.f.severity === sv; });
+      if (!items.length) return;
+      p.appendChild(h("div", { class: "row", style: "margin:18px 0 8px" }, [sevBadge(sv), h("span", { style: "color:var(--muted);font-size:14px", text: SEV_MEANING[sv] })]));
+      var list = h("div", { class: "list" });
+      items.forEach(function (x) {
+        var box = h("input", { type: "checkbox", "aria-label": "Mark fixed: " + x.f.title });
+        box.checked = !!done[x.key];
+        var row = h("label", { class: "check" + (box.checked ? " done" : "") }, [box, h("div", { style: "min-width:0" }, [
+          h("div", { class: "ftitle", text: x.f.title }), h("div", { class: "floc", text: x.f.file + (x.f.line ? ":" + x.f.line : "") }),
+          x.f.fix ? h("div", { style: "font-size:14px;margin-top:4px", text: "Fix: " + x.f.fix.description }) : null])]);
+        box.addEventListener("change", function () { done[x.key] = box.checked; if (!box.checked) delete done[x.key]; row.classList.toggle("done", box.checked); store(key, JSON.stringify(done)); progress(); });
+        list.appendChild(row);
+      });
+      p.appendChild(list);
+    });
+    var cmd = "cyberwarden scan --path \"" + META.target + "\"" + (META.web ? " --web" : "") + " --format dashboard -o cyberwarden-report.html";
+    p.appendChild(h("div", { class: "card", style: "margin-top:18px" }, [h("h3", { text: "Re-scan after fixing" }), h("pre", { text: cmd }), h("button", { class: "btn noprint", style: "margin-top:8px", text: "Copy command", onclick: function () { copy(cmd); } })]));
+  }
+
+  // ---------- Files ----------
+  function renderFiles(p) {
+    var byFile = {};
+    FINDINGS.forEach(function (x) { var e = byFile[x.f.file] || (byFile[x.f.file] = { file: x.f.file, total: 0 }); e.total++; e[x.f.severity] = (e[x.f.severity] || 0) + 1; });
+    var rows = Object.keys(byFile).map(function (k) { return byFile[k]; }).sort(function (a, b) { return (b.critical || 0) - (a.critical || 0) || (b.high || 0) - (a.high || 0) || b.total - a.total; });
+    p.appendChild(h("h2", { text: "Files" }));
+    p.appendChild(h("p", { class: "sub", text: rows.length ? plural(rows.length, "file") + " with findings, riskiest first. " + R.summary.filesScanned + " files scanned in total." : "No file has findings." }));
+    if (!rows.length) return;
+    var tb = h("tbody");
+    rows.forEach(function (r) {
+      tb.appendChild(h("tr", null, [h("td", null, h("button", { class: "linkish mono", style: "text-align:left", text: r.file, onclick: function () { openFindings({ file: r.file }); } }))]
+        .concat(SEVS.map(function (s) { return h("td", null, r[s] ? h("span", { class: "badge " + s, text: String(r[s]) }) : h("span", { style: "color:var(--muted)", text: "–" })); }))
+        .concat([h("td", { style: "font-weight:700", text: String(r.total) })])));
+    });
+    p.appendChild(h("div", { class: "tablewrap card", style: "padding:6px 10px" }, h("table", null, [h("thead", null, h("tr", null, ["File"].concat(SEVS.map(function (s) { return SEV_LABEL[s]; })).concat(["Total"]).map(function (t) { return h("th", { text: t }); }))), tb])));
+  }
+
+  // ---------- Compliance ----------
+  function renderCompliance(p) {
+    p.appendChild(h("h2", { text: "Compliance" }));
+    p.appendChild(h("p", { class: "sub", text: "Which audit controls your findings touch, for clients who ask about SOC 2, PCI DSS (card payments) or ISO 27001." }));
+    var g = h("div", { class: "grid g-3" });
+    DATA.compliance.forEach(function (fw) {
+      var c = h("div", { class: "card" }, [h("h3", { text: fw.frameworkName }), h("p", { class: "sub", style: "margin:0 0 10px", text: fw.controls.length ? plural(fw.controls.length, "control") + " affected by " + plural(fw.mappedFindingCount, "finding") : "No controls affected." })]);
+      fw.controls.forEach(function (ctl) {
+        c.appendChild(h("div", { style: "border-top:1px solid var(--line);padding:9px 0" }, [
+          h("div", { class: "row between" }, [h("b", { class: "mono", text: ctl.controlId }), sevBadge(ctl.highestSeverity)]),
+          h("div", { style: "font-size:14px", text: ctl.controlTitle }),
+          h("div", { style: "font-size:13px;color:var(--muted)", text: plural(ctl.findingCount, "finding") + (ctl.exampleFindings.length ? " · e.g. " + ctl.exampleFindings[0] : "") })]));
+      });
+      g.appendChild(c);
+    });
+    p.appendChild(g);
+    p.appendChild(h("p", { class: "note", style: "margin-top:14px", text: "This mapping is security guidance by finding category, not a certified audit. Nigeria's NDPA 2023 privacy issues (BVN, NIN and other personal data) appear as findings under Data leaks and Exposure." }));
+  }
+
+  // ---------- Learn ----------
+  function renderLearn(p) {
+    p.appendChild(h("h2", { text: "Learn" }));
+    p.appendChild(h("p", { class: "sub", text: "What the words and colours in this report mean." }));
+    var sev = h("div", { class: "card" }, [h("h3", { text: "Severity levels" })]);
+    SEVS.forEach(function (s) { sev.appendChild(h("div", { class: "row", style: "margin:9px 0;align-items:flex-start" }, [h("div", { style: "width:92px;flex:none" }, sevBadge(s)), h("span", { text: SEV_MEANING[s] })])); });
+    var gr = h("div", { class: "card" }, [h("h3", { text: "Grades" })]);
+    GRADES.forEach(function (x) { gr.appendChild(h("div", { class: "row", style: "margin:9px 0" }, [h("b", { style: "width:22px", text: x[0] }), h("span", { class: "mono", style: "width:64px;color:var(--muted)", text: x[1] }), h("span", { text: x[2] })])); });
+    p.appendChild(h("div", { class: "grid g-2" }, [sev, gr]));
+    var cats = h("div", { class: "card", style: "margin-top:14px" }, [h("h3", { text: "What each category means" })]);
+    Object.keys(CAT).forEach(function (k) { cats.appendChild(h("div", { style: "border-top:1px solid var(--line);padding:10px 0" }, [h("b", { text: CAT[k][0] }), h("div", { style: "color:var(--muted)", text: CAT[k][1] })])); });
+    p.appendChild(cats);
+    var src = h("div", { class: "card", style: "margin-top:14px" }, [h("h3", { text: "Where the checks come from" })]);
+    [["agent", "Checks your AI coding setup (Claude Code and similar): secrets, permissions, hooks, MCP servers, skills and prompt-injection risks. From AgentShield by Affaan M (MIT licence)."],
+     ["defense", "CyberWarden's extra layer: database Row-Level Security, SSRF, unsafe uploads, double-spend race conditions, unpinned packages, Paystack/Flutterwave/WhatsApp webhooks, chatbot history, NDPA personal data, mass assignment, exposed dotfiles and OTP safety."],
+     ["web", "CyberWarden's checks on your site's own code (scan with --web): SQL injection, XSS, secrets in code or git, weak passwords and tokens, cookies, CORS, CSP, headers, rate limits, webhooks, open redirects, file paths, error leaks, payments and AI prompt safety."]]
+      .forEach(function (x) { src.appendChild(h("div", { style: "border-top:1px solid var(--line);padding:10px 0" }, [h("b", { text: GROUPS[x[0]] }), h("div", { style: "color:var(--muted)", text: x[1] })])); });
+    p.appendChild(src);
+  }
+
+  // ---------- Start ----------
+  var start = (location.hash || "").slice(1);
+  show(TABS.some(function (t) { return t.id === start; }) ? start : "overview");
+})();
+</script>
+</body>
+</html>
