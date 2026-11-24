@@ -355,8 +355,8 @@ describe("action helpers (logic verification)", () => {
     // Read the action's settings file as text
     const actionYaml = readFileSync(resolve(process.cwd(), "action.yml"), "utf-8");
 
-    // The web input must exist
-    expect(actionYaml).toMatch(/\n  web:\n/);
+    // The web input must exist (\r? allows Windows line endings, used on Windows test machines)
+    expect(actionYaml).toMatch(/\r?\n  web:\r?\n/);
     // The old Claude-only wording must be gone
     expect(actionYaml).not.toContain("Claude Code configurations");
   });
