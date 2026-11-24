@@ -1,5 +1,5 @@
 name: "CyberWarden Security Scan"
-description: "Scan AI agent configs and web apps for security vulnerabilities"
+description: "Scan AI coding setups and website code for leaked keys, risky hooks and common security bugs"
 author: "ijioku"
 
 branding:
@@ -8,9 +8,13 @@ branding:
 
 inputs:
   path:
-    description: "Path to scan for Claude Code configurations"
+    description: "Folder to scan: AI coding setup files (CLAUDE.md, settings, hooks, MCP servers, agents) and, with web turned on, website code"
     required: false
     default: "."
+  web:
+    description: "Also scan website and web-app code for common security bugs (XSS, SQL injection, weak password hashing, missing webhook checks and more). Set to true to turn on"
+    required: false
+    default: "false"
   min-severity:
     description: "Minimum severity to report: critical, high, medium, low, info"
     required: false
@@ -28,15 +32,15 @@ inputs:
     required: false
     default: "agentshield-results.sarif"
   baseline:
-    description: "Path to an AgentShield baseline JSON file for drift comparison"
+    description: "Path to a baseline JSON file from an earlier scan, to show what changed since then"
     required: false
     default: ""
   save-baseline:
-    description: "Path to write the current scan as a new AgentShield baseline JSON file"
+    description: "Path to save this scan as a new baseline JSON file"
     required: false
     default: ""
   policy:
-    description: "Path to an AgentShield organization policy JSON file"
+    description: "Path to an organization policy JSON file"
     required: false
     default: ""
   fail-on-policy:
@@ -56,7 +60,7 @@ inputs:
     required: false
     default: ""
   evidence-pack:
-    description: "Path to write an AgentShield evidence pack for audit and security-review handoffs"
+    description: "Path to write an evidence pack (scan report plus checksums) for audits and security reviews"
     required: false
     default: ""
   verify-evidence-pack:
@@ -64,7 +68,7 @@ inputs:
     required: false
     default: "true"
   policy-promotion-manifest:
-    description: "Path to an AgentShield policy export manifest to verify and promote or dry-run"
+    description: "Path to a policy export manifest to verify and promote (or test with a dry run)"
     required: false
     default: ""
   policy-promotion-pack:

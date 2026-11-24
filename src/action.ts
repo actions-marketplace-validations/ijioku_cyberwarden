@@ -155,18 +155,23 @@ async function run(): Promise<void> {
     : failOnFindings;
   const evidencePackPath = getInput("evidence-pack", "");
   const verifyEvidencePackOutput = getInput("verify-evidence-pack", "true") === "true";
+  // Turn on the website-code checks only when the workflow sets web: "true"
+  const webScan = getInput("web", "false") === "true";
 
   // Resolve and validate path
   const workspace = process.env.GITHUB_WORKSPACE ?? process.cwd();
   const targetPath = resolve(workspace, inputPath);
 
   if (!existsSync(targetPath)) {
-    console.log(`::error::AgentShield: Path does not exist: ${targetPath}`);
+    console.log(`::error::CyberWarden: Path does not exist: ${targetPath}`);
     process.exitCode = 1;
     return;
   }
 
-  console.log(`AgentShield: Scanning ${targetPath}`);
+  // Print what is being scanned and with which settings
+  console.log(`CyberWarden: Scanning ${targetPath}`);
+  // Show whether the website-code checks are on, so the log explains the results
+  console.log(`  web: ${webScan}`);
   console.log(`  min-severity: ${minSeverity}`);
   console.log(`  fail-on-findings: ${failOnFindings}`);
   console.log(`  format: ${format}`);
@@ -176,8 +181,8 @@ async function run(): Promise<void> {
   }
   console.log("");
 
-  // Run scan
-  const result = scan(targetPath);
+  // Run the scan, adding the website-code checks when web is turned on
+  const result = scan(targetPath, { web: webScan });
 
   // Filter findings by severity
   const filteredResult = {

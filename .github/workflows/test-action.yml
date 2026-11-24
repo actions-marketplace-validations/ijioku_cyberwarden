@@ -81,6 +81,27 @@ jobs:
 
           echo "All outputs verified successfully"
 
+      # Scan the deliberately unsafe sample shop with the website-code checks turned on
+      - name: Run CyberWarden web scan on the vulnerable shop
+        id: web-scan
+        uses: ./
+        with:
+          path: "examples/vulnerable-shop"
+          web: "true"
+          min-severity: "low"
+          fail-on-findings: "false"
+
+      # Make sure the web scan really found problems in the unsafe shop
+      - name: Verify the web scan found website bugs
+        env:
+          WEB_TOTAL: ${{ steps.web-scan.outputs.total-findings }}
+        run: |
+          echo "Web scan findings: $WEB_TOTAL"
+          if [ -z "$WEB_TOTAL" ] || [ "$WEB_TOTAL" -lt 1 ]; then
+            echo "ERROR: web scan found nothing in the vulnerable shop"
+            exit 1
+          fi
+
   # Test the action on a clean directory (should pass with high score)
   test-clean:
     name: Scan clean directory

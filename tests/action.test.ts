@@ -350,6 +350,66 @@ describe("action helpers (logic verification)", () => {
     expect(outputs).toContain("supply-chain-critical-count=1");
   });
 
+  // Checks that action.yml offers the web input, switched off by default
+  it("documents the web input in action.yml", () => {
+    // Read the action's settings file as text
+    const actionYaml = readFileSync(resolve(process.cwd(), "action.yml"), "utf-8");
+
+    // The web input must exist
+    expect(actionYaml).toMatch(/\n  web:\n/);
+    // The old Claude-only wording must be gone
+    expect(actionYaml).not.toContain("Claude Code configurations");
+  });
+
+  // Runs the built action on the sample vulnerable shop with web off, then on
+  it("finds website-code bugs only when the web input is true", () => {
+    // Small helper that runs the action on the vulnerable shop with a given web setting
+    const runWith = (web: string) => {
+      // Make an empty temporary folder for this run's output files
+      const workspace = mkdtempSync(join(tmpdir(), "cyberwarden-action-web-"));
+      // The file where the action writes its outputs (score, findings and so on)
+      const outputFile = join(workspace, "github-output.txt");
+      // Run dist/action.js the same way GitHub would, with inputs passed as INPUT_ variables
+      const result = spawnSync(process.execPath, [ACTION_PATH], {
+        cwd: workspace,
+        env: {
+          ...process.env,
+          // Point the workspace at the repository so the examples folder can be found
+          GITHUB_WORKSPACE: process.cwd(),
+          GITHUB_OUTPUT: outputFile,
+          GITHUB_STEP_SUMMARY: join(workspace, "github-summary.md"),
+          // Scan the deliberately unsafe sample shop
+          INPUT_PATH: "examples/vulnerable-shop",
+          // Report everything, from info upwards
+          "INPUT_MIN-SEVERITY": "info",
+          // Don't fail the run, we only want to count findings
+          "INPUT_FAIL-ON-FINDINGS": "false",
+          // Skip the MCP package check, it isn't what this test is about
+          "INPUT_SUPPLY-CHAIN": "false",
+          // The setting being tested
+          INPUT_WEB: web,
+        },
+        encoding: "utf-8",
+      });
+      // Pull the total-findings number out of the outputs file
+      const match = readFileSync(outputFile, "utf-8").match(/total-findings=(\d+)/);
+      // Hand back the exit code, the log and the findings count
+      return { status: result.status, stdout: result.stdout, total: Number(match?.[1] ?? -1) };
+    };
+
+    // Scan once with the website checks off and once with them on
+    const off = runWith("false");
+    const on = runWith("true");
+
+    // Both runs should finish without crashing
+    expect(off.status).toBe(0);
+    expect(on.status).toBe(0);
+    // The log should say whether web checks were on
+    expect(on.stdout).toContain("web: true");
+    // Turning web on must find real website bugs that the plain scan misses
+    expect(on.total).toBeGreaterThan(off.total);
+  });
+
   describe("escapeAnnotation", () => {
     it("escapes percent signs", () => {
       expect(escapeAnnotation("100%")).toBe("100%25");

@@ -49991,14 +49991,16 @@ async function run() {
   const failOnSupplyChain = failOnSupplyChainInput ? failOnSupplyChainInput === "true" : failOnFindings;
   const evidencePackPath = getInput("evidence-pack", "");
   const verifyEvidencePackOutput = getInput("verify-evidence-pack", "true") === "true";
+  const webScan = getInput("web", "false") === "true";
   const workspace = process.env.GITHUB_WORKSPACE ?? process.cwd();
   const targetPath = resolve4(workspace, inputPath);
   if (!existsSync7(targetPath)) {
-    console.log(`::error::AgentShield: Path does not exist: ${targetPath}`);
+    console.log(`::error::CyberWarden: Path does not exist: ${targetPath}`);
     process.exitCode = 1;
     return;
   }
-  console.log(`AgentShield: Scanning ${targetPath}`);
+  console.log(`CyberWarden: Scanning ${targetPath}`);
+  console.log(`  web: ${webScan}`);
   console.log(`  min-severity: ${minSeverity}`);
   console.log(`  fail-on-findings: ${failOnFindings}`);
   console.log(`  format: ${format}`);
@@ -50007,7 +50009,7 @@ async function run() {
     console.log(`  fail-on-policy: ${failOnPolicy}`);
   }
   console.log("");
-  const result = scan(targetPath);
+  const result = scan(targetPath, { web: webScan });
   const filteredResult = {
     ...result,
     findings: result.findings.filter((f) => isAtOrAboveSeverity(f, minSeverity))
